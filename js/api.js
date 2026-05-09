@@ -1,4 +1,4 @@
-const API_BASE = "https://script.google.com/macros/s/AKfycbzXfjgUoLjuvCcTE9udgHDkQBViyJCvkHEGK14t0CyMTTOSKyjrxQ4WntstFVG--pLeAA/exec";
+const API_BASE = "https://script.google.com/macros/s/AKfycbw4T2dES8beEeIrrk4rt96tG5CTFUc2hH_uD0pgU1JIrd2AqKrZVhpffPsGJwc0FuZzOw/exec";
 
 export async function fetchRoutes() {
     try {
