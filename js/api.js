@@ -1,4 +1,4 @@
-const API_BASE = "https://script.google.com/macros/s/AKfycbw4T2dES8beEeIrrk4rt96tG5CTFUc2hH_uD0pgU1JIrd2AqKrZVhpffPsGJwc0FuZzOw/exec";
+const API_BASE = "https://script.google.com/macros/s/AKfycbzXfjgUoLjuvCcTE9udgHDkQBViyJCvkHEGK14t0CyMTTOSKyjrxQ4WntstFVG--pLeAA/exec";
 
 export async function fetchRoutes() {
     try {
@@ -15,8 +15,9 @@ export async function syncRoute(routeData) {
     try {
         const response = await fetch(`${API_BASE}?path=rutas`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            mode: "cors", // Importante para permitir redirecciones
             body: JSON.stringify(routeData)
+            // Eliminamos el header 'application/json' para evitar el preflight OPTIONS
         });
 
         const result = await response.json();
