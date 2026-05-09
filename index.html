@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MotoRoutes Web</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>MotoRoutes</h1>
+            <div id="sync-status" class="status-indicator"></div>
+        </header>
+
+        <main id="map-container">
+            <div id="map"></div>
+        </main>
+
+        <nav class="bottom-nav">
+            <button id="btn-home" class="nav-item active">
+                <span class="icon">🏠</span>
+                <span>Inicio</span>
+            </button>
+            <button id="btn-routes" class="nav-item">
+                <span class="icon">🏍️</span>
+                <span>Rutas</span>
+            </button>
+            <button id="btn-pois" class="nav-item">
+                <span class="icon">📍</span>
+                <span>POIs</span>
+            </button>
+            <button id="btn-add" class="nav-item action-btn">
+                <span class="icon">+</span>
+            </button>
+        </nav>
+
+        <!-- Modales -->
+        <div id="modal-add" class="modal">
+            <div class="modal-content">
+                <h2>Nueva Ruta</h2>
+                <button id="btn-import-gpx">Importar GPX</button>
+                <button id="btn-manual-route">Ruta Manual</button>
+                <button class="close-modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+	<script>
+    const MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoibWljYWphZGVjYXNhIiwiYSI6ImNtb3lmbW9ncDA0Z2IydHIyaTNsajc2djUifQ.pROJ-awAsKm7qvwTQuL3OA";
+</script>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
