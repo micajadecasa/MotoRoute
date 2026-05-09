@@ -2,7 +2,7 @@ const API_BASE = "https://script.google.com/macros/s/AKfycbzXfjgUoLjuvCcTE9udgHD
 
 export async function fetchRoutes() {
     try {
-        const response = await fetch(`${API_BASE}?action=getRutas`);
+        const response = await fetch(`${API_BASE}?path=rutas`);
         const result = await response.json();
         return result.success ? result.data : [];
     } catch (error) {
@@ -13,13 +13,10 @@ export async function fetchRoutes() {
 
 export async function syncRoute(routeData) {
     try {
-        const response = await fetch(API_BASE, {
+        const response = await fetch(`${API_BASE}?path=rutas`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                action: "addRuta",
-                data: routeData
-            })
+            body: JSON.stringify(routeData)
         });
 
         const result = await response.json();
@@ -32,7 +29,7 @@ export async function syncRoute(routeData) {
 
 export async function fetchPOIs() {
     try {
-        const response = await fetch(`${API_BASE}?action=getPOIs`);
+        const response = await fetch(`${API_BASE}?path=pois`);
         const result = await response.json();
         return result.success ? result.data : [];
     } catch (error) {
