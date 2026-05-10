@@ -32,9 +32,9 @@ export async function fetchRoutes() {
  * Sincroniza una ruta con el backend.
  * Usa 'text/plain' para evitar el preflight OPTIONS de CORS en Apps Script.
  */
-export async function syncRoute(routeData) {
+export async function syncRoute(routeData, path = 'rutas') {
     try {
-        const response = await fetch(`${CONFIG.API_BASE}?path=rutas`, {
+        const response = await fetch(`${CONFIG.API_BASE}?path=${path}`, {
             method: "POST",
             mode: "cors",
             cache: 'no-cache',

@@ -143,11 +143,16 @@ function setupUI() {
     const btnClose = document.querySelectorAll('.close-modal');
     const btnManual = document.getElementById('btn-manual-route');
     const btnImport = document.getElementById('btn-import-gpx');
+    const btnAddPoi = document.getElementById('btn-add-poi');
     const btnExitNav = document.getElementById('btn-exit-nav');
 
+    // Botón Salir Navegación: Oculta HUD pero mantiene la ruta si el usuario quiere
     btnExitNav.onclick = () => {
         document.getElementById('moto-hud').classList.remove('active');
-        appDirections.removeRoutes();
+        // No eliminamos la ruta de Directions para que el usuario pueda seguir viéndola
+        // Si prefiere limpiar todo, descomenta la línea de abajo:
+        // appDirections.removeRoutes();
+        showToast('Navegación finalizada. Ruta mantenida en mapa.', 'info');
     };
 
     btnAdd.onclick = () => modal.classList.add('active');
@@ -162,16 +167,51 @@ function setupUI() {
         };
     });
 
-    // Navegación
+    // Navegación de pestañas
     document.getElementById('btn-home').onclick = () => switchView('map-container');
     document.getElementById('btn-routes').onclick = () => switchView('view-routes');
     document.getElementById('btn-pois').onclick = () => switchView('view-pois');
+
+    // Lógica: Añadir POI (Punto de Interés)
+    btnAddPoi.onclick = () => {
+        modal.classList.remove('active');
+        showToast('Toca el mapa para situar el punto de interés.', 'info');
+        
+        const clickHandler = async (e) => {
+            appMap.off('click', clickHandler);
+            const nombre = prompt("Nombre del Punto de Interés:");
+            if (!nombre) return;
+
+            const newPoi = {
+                id: generateId(),
+                nombre: nombre,
+                lat: e.lngLat.lat,
+                lng: e.lngLat.lng,
+                tipo: 'marcador',
+                fecha: new Date().toISOString()
+            };
+
+            showToast('Guardando punto...', 'info');
+            const success = await syncRoute(newPoi, 'pois'); // Usamos el path 'pois'
+            if (success) {
+                showToast('¡Punto guardado con éxito!', 'success');
+                new mapboxgl.Marker({ color: '#ff9800' })
+                    .setLngLat([newPoi.lng, newPoi.lat])
+                    .setPopup(new mapboxgl.Popup().setHTML(`<h3>${newPoi.nombre}</h3>`))
+                    .addTo(appMap);
+            } else {
+                showToast('Error al guardar. Revisa la consola.', 'error');
+            }
+        };
+
+        appMap.on('click', clickHandler);
+    };
 
     // Ruta Manual
     btnManual.onclick = () => {
         modal.classList.remove('active');
         switchView('map-container');
-        showToast('Toca el mapa para añadir puntos.', 'info');
+        showToast('Toca el mapa para añadir puntos a tu ruta.', 'info');
         
         const finishBtn = document.createElement('button');
         finishBtn.innerText = 'Guardar Ruta';
@@ -180,23 +220,24 @@ function setupUI() {
 
         activeDrawing = enableDrawingMode(appMap, null, async (finalGeoJSON) => {
             finishBtn.remove();
-            showToast('Sincronizando...', 'info');
+            showToast('Sincronizando con la nube...', 'info');
             
             const newRoute = {
                 id: generateId(),
-                nombre: "Ruta Manual " + new Date().toLocaleDateString(),
+                nombre: "Ruta Manual " + new Date().toLocaleDateString('es-ES'),
                 geojson: JSON.stringify(finalGeoJSON),
                 fecha: new Date().toISOString()
             };
 
-            const success = await syncRoute(newRoute);
+            const success = await syncRoute(newRoute, 'rutas');
             if (success) {
-                showToast('Ruta guardada', 'success');
+                showToast('¡Ruta guardada!', 'success');
                 allRoutes.push(newRoute);
                 renderRoutesList(allRoutes);
                 addRouteToMap(appMap, finalGeoJSON, `route-${newRoute.id}`);
             } else {
-                showToast('Error al guardar. Revisa CORS.', 'error');
+                showToast('Error de conexión o CORS.', 'error');
+                console.error("Error al guardar la ruta. Verifica el despliegue de Apps Script como 'Anyone'.");
             }
             activeDrawing = null;
         });
@@ -215,7 +256,7 @@ function setupUI() {
             reader.onload = async ev => {
                 try {
                     const geojson = parseGPX(ev.target.result);
-                    showToast('Importando...', 'info');
+                    showToast('Importando archivo...', 'info');
                     
                     const newRoute = {
                         id: generateId(),
@@ -224,17 +265,17 @@ function setupUI() {
                         fecha: new Date().toISOString()
                     };
 
-                    const success = await syncRoute(newRoute);
+                    const success = await syncRoute(newRoute, 'rutas');
                     if (success) {
-                        showToast('GPX Importado', 'success');
+                        showToast('GPX Importado correctamente', 'success');
                         allRoutes.push(newRoute);
                         renderRoutesList(allRoutes);
                         addRouteToMap(appMap, geojson, `route-${newRoute.id}`);
                     } else {
-                        showToast('Error al subir GPX', 'error');
+                        showToast('Error al subir el archivo.', 'error');
                     }
                 } catch (err) {
-                    showToast('GPX inválido', 'error');
+                    showToast('El archivo GPX no es válido.', 'error');
                 }
                 modal.classList.remove('active');
             };
