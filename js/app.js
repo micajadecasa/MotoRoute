@@ -7,6 +7,7 @@ let appDirections;
 let watchId = null;
 let activeDrawing = null;
 let allRoutes = [];
+let allPOIs = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     const { map, directions } = initMap();
@@ -24,18 +25,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadData() {
     try {
-        allRoutes = await fetchRoutes();
-        renderRoutesList(allRoutes);
+        const [routes, pois] = await Promise.all([
+            fetchRoutes(),
+            fetchRoutes('pois') // Reusamos fetchRoutes para pois
+        ]);
         
+        allRoutes = routes;
+        allPOIs = pois;
+
+        renderRoutesList(allRoutes);
+        renderPOIsList(allPOIs);
+        
+        // Dibujar rutas
         allRoutes.forEach(route => {
             if (route.geojson) {
                 try {
                     const geo = JSON.parse(route.geojson);
                     addRouteToMap(appMap, geo, `route-${route.id}`);
-                } catch (e) {
-                    console.warn("Error parseando geojson:", route.id);
-                }
+                } catch (e) {}
             }
+        });
+
+        // Dibujar POIs
+        allPOIs.forEach(poi => {
+            new mapboxgl.Marker({ color: '#ff9800' })
+                .setLngLat([poi.lng, poi.lat])
+                .setPopup(new mapboxgl.Popup().setHTML(`<h3>${poi.nombre}</h3>`))
+                .addTo(appMap);
         });
     } catch (error) {
         showToast('Error cargando datos', 'error');
@@ -55,13 +71,12 @@ function renderRoutesList(routes) {
         <div class="route-item" id="item-${route.id}">
             <div class="route-info">
                 <h3>${route.nombre || 'Sin nombre'}</h3>
-                <p>${new Date(route.fecha).toLocaleDateString()}</p>
+                <p>${new Date(route.fecha).toLocaleDateString('es-ES')}</p>
             </div>
             <button class="btn-view-route primary-btn" data-id="${route.id}">VER</button>
         </div>
     `).join('');
 
-    // Eventos para ver ruta
     list.querySelectorAll('.btn-view-route').forEach(btn => {
         btn.onclick = () => {
             const id = btn.getAttribute('data-id');
@@ -75,11 +90,41 @@ function renderRoutesList(routes) {
     });
 }
 
+function renderPOIsList(pois) {
+    const list = document.getElementById('pois-list');
+    if (!list) return;
+    
+    if (pois.length === 0) {
+        list.innerHTML = '<p class="empty-msg">No hay puntos guardados.</p>';
+        return;
+    }
+
+    list.innerHTML = pois.map(poi => `
+        <div class="poi-item" id="poi-${poi.id}">
+            <div class="route-info">
+                <h3>${poi.nombre || 'Punto'}</h3>
+                <p>${poi.tipo || 'Marcador'}</p>
+            </div>
+            <button class="btn-view-route secondary-btn" data-id="${poi.id}">IR</button>
+        </div>
+    `).join('');
+
+    list.querySelectorAll('.btn-view-route').forEach(btn => {
+        btn.onclick = () => {
+            const id = btn.getAttribute('data-id');
+            const poi = allPOIs.find(p => p.id == id);
+            if (poi) {
+                switchView('map-container');
+                appMap.flyTo({ center: [poi.lng, poi.lat], zoom: 15 });
+            }
+        };
+    });
+}
+
 function switchView(viewId) {
     document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
     document.getElementById(viewId).classList.add('active');
     
-    // Actualizar nav
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
         if (viewId === 'map-container' && item.id === 'btn-home') item.classList.add('active');
@@ -87,9 +132,7 @@ function switchView(viewId) {
         if (viewId === 'view-pois' && item.id === 'btn-pois') item.classList.add('active');
     });
 
-    if (viewId === 'map-container') {
-        appMap.resize();
-    }
+    if (viewId === 'map-container') appMap.resize();
 }
 
 function setupNavigationTracking() {
@@ -99,12 +142,29 @@ function setupNavigationTracking() {
     const hudSpeed = document.getElementById('hud-speed');
     const hudLimit = document.getElementById('hud-limit');
     const hudEta = document.getElementById('hud-eta');
+    const btnStart = document.getElementById('btn-start-nav');
 
+    // Al recibir una ruta, mostrar botón "IR"
     appDirections.on('route', (e) => {
         const route = e.route[0];
         if (route) {
-            hud.classList.add('active');
-            updateHUD(route);
+            btnStart.style.display = 'flex';
+            btnStart.onclick = () => {
+                hud.classList.add('active');
+                btnStart.style.display = 'none';
+                updateHUD(route);
+                // Modo primera persona inicial
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(p => {
+                        appMap.easeTo({
+                            center: [p.coords.longitude, p.coords.latitude],
+                            zoom: 17,
+                            pitch: 60,
+                            bearing: p.coords.heading || 0
+                        });
+                    });
+                }
+            };
         }
     });
 
@@ -126,11 +186,13 @@ function setupNavigationTracking() {
             const limit = parseInt(hudLimit.innerText) || 90;
             hudSpeed.style.color = speedKmH > limit ? '#ff5252' : '#fff';
 
+            // Seguimiento en primera persona si el HUD está activo
             if (hud.classList.contains('active')) {
                 appMap.easeTo({
                     center: [pos.coords.longitude, pos.coords.latitude],
                     pitch: 60,
-                    bearing: pos.coords.heading || 0
+                    bearing: pos.coords.heading || 0,
+                    duration: 1000
                 });
             }
         }, null, { enableHighAccuracy: true });
@@ -210,6 +272,10 @@ function setupUI() {
     // Ruta Manual
     btnManual.onclick = () => {
         modal.classList.remove('active');
+        const nombreSugerido = "Ruta Manual " + new Date().toLocaleDateString('es-ES');
+        const nombre = prompt("Nombre de la ruta:", nombreSugerido);
+        if (!nombre) return;
+
         switchView('map-container');
         showToast('Toca el mapa para añadir puntos a tu ruta.', 'info');
         
@@ -224,7 +290,7 @@ function setupUI() {
             
             const newRoute = {
                 id: generateId(),
-                nombre: "Ruta Manual " + new Date().toLocaleDateString('es-ES'),
+                nombre: nombre,
                 geojson: JSON.stringify(finalGeoJSON),
                 fecha: new Date().toISOString()
             };
@@ -237,7 +303,6 @@ function setupUI() {
                 addRouteToMap(appMap, finalGeoJSON, `route-${newRoute.id}`);
             } else {
                 showToast('Error de conexión o CORS.', 'error');
-                console.error("Error al guardar la ruta. Verifica el despliegue de Apps Script como 'Anyone'.");
             }
             activeDrawing = null;
         });
@@ -252,6 +317,10 @@ function setupUI() {
         input.accept = '.gpx';
         input.onchange = async e => {
             const file = e.target.files[0];
+            const nombreSugerido = file.name.replace('.gpx', '');
+            const nombre = prompt("Nombre para la ruta GPX:", nombreSugerido);
+            if (!nombre) return;
+
             const reader = new FileReader();
             reader.onload = async ev => {
                 try {
@@ -260,7 +329,7 @@ function setupUI() {
                     
                     const newRoute = {
                         id: generateId(),
-                        nombre: file.name.replace('.gpx', ''),
+                        nombre: nombre,
                         geojson: JSON.stringify(geojson),
                         fecha: new Date().toISOString()
                     };

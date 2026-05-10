@@ -496,8 +496,61 @@ button:active {
     font-size: 0.9rem !important;
 }
 
+/* Botón IR (Iniciar Navegación) */
+.start-nav-btn {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent-gradient);
+    color: white;
+    padding: 1.2rem 3rem;
+    border-radius: 50px;
+    font-size: 1.8rem;
+    font-weight: 900;
+    box-shadow: 0 10px 30px rgba(255, 87, 34, 0.5);
+    z-index: 900;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.05); }
+    100% { transform: translateX(-50%) scale(1); }
+}
+
 #main-header {
     background: rgba(0,0,0,0.9);
+}
+
+/* Fix Mapbox Directions Dropdown Contrast */
+.mapboxgl-ctrl-directions .directions-control-instructions,
+.mapboxgl-ctrl-directions .suggestions-wrapper,
+.mapboxgl-ctrl-directions .suggestions {
+    background: #222 !important;
+    color: white !important;
+}
+
+.mapboxgl-ctrl-directions .suggestions > li > a {
+    color: white !important;
+}
+
+.mapboxgl-ctrl-directions .suggestions > li.active > a,
+.mapboxgl-ctrl-directions .suggestions > li > a:hover {
+    background: #444 !important;
+}
+
+.mapboxgl-ctrl-directions .directions-step {
+    color: #eee !important;
+    border-bottom: 1px solid #333 !important;
+}
+
+.mapboxgl-ctrl-directions .directions-step-distance {
+    color: var(--primary-color) !important;
 }
 
 .status-indicator {

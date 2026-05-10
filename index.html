@@ -85,11 +85,16 @@
                 <h2>Puntos de Interés</h2>
             </header>
             <div id="pois-list" class="content-list">
-                <p class="empty-msg">No hay POIs guardados.</p>
+                <p class="empty-msg">Cargando POIs...</p>
             </div>
         </section>
 
         <div id="toast-container" aria-live="polite"></div>
+
+        <!-- Botón IR Flotante (Solo aparece cuando hay ruta lista) -->
+        <button id="btn-start-nav" class="start-nav-btn" style="display: none;">
+            <span class="icon">🚀</span> IR
+        </button>
 
         <nav class="bottom-nav" role="navigation">
             <button id="btn-home" class="nav-item active" aria-label="Inicio">
