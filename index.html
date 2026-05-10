@@ -36,127 +36,101 @@
 </head>
 <body>
     <div id="app">
-        <!-- Moto HUD (Navegación) -->
+        <!-- Moto HUD (Navegación / Modo Garmin) -->
         <div id="moto-hud" class="hud-overlay">
-            <div class="hud-top">
-                <div id="hud-instruction" class="hud-main-instruction">Calculando...</div>
-                <div id="hud-next-dist" class="hud-sub-instruction">-- m</div>
+            <div class="hud-nav-bar">
+                <div class="hud-direction">
+                    <span id="hud-turn-icon" class="turn-icon">⬆</span>
+                    <div class="hud-instruction-group">
+                        <span id="hud-next-dist" class="dist-value">-- m</span>
+                        <span id="hud-instruction" class="street-name">Calculando ruta...</span>
+                    </div>
+                </div>
+                <div class="hud-meta">
+                    <div class="meta-item">
+                        <span class="label">LLEGADA</span>
+                        <span id="hud-eta" class="value">--:--</span>
+                    </div>
+                </div>
+                <button id="btn-exit-nav" class="hud-exit-btn">SALIR</button>
             </div>
-            <div class="hud-middle"></div>
-            <div class="hud-bottom">
-                <div class="hud-stat">
-                    <span id="hud-speed" class="hud-value">0</span>
-                    <span class="hud-unit">km/h</span>
-                </div>
-                <div class="hud-stat">
-                    <span id="hud-limit" class="hud-value-small">90</span>
-                    <span class="hud-label">Límite</span>
-                </div>
-                <div class="hud-stat">
-                    <span id="hud-eta" class="hud-value-small">--:--</span>
-                    <span class="hud-label">Llegada</span>
+            
+            <div class="hud-telemetry">
+                <div class="speed-box">
+                    <span id="hud-speed">0</span>
+                    <span class="unit">km/h</span>
                 </div>
             </div>
-            <button id="btn-exit-nav" class="hud-exit-btn">SALIR</button>
         </div>
 
         <header id="main-header">
             <div class="header-content">
-                <h1>MotoRoutes <span class="badge">PRO</span></h1>
+                <h1>MotoRoute <span class="badge">PRO</span></h1>
                 <div class="header-actions">
-                    <button id="btn-header-search" class="icon-btn" title="Buscar">🔍</button>
                     <div id="sync-status" class="status-indicator" title="Sincronizado"></div>
                 </div>
             </div>
         </header>
 
-        <!-- Panel de Planificación estilo Calimoto -->
+        <!-- Controles Flotantes -->
+        <div class="map-controls">
+            <button id="btn-recenter" class="fab-btn" title="Centrar">📍</button>
+            <button id="btn-compass" class="fab-btn" title="Norte">🧭</button>
+        </div>
+
+        <!-- Panel de Planificación -->
         <aside id="planner-panel" class="planner-sidebar">
-            <div class="planner-tabs">
-                <button class="tab-btn active" data-tab="plan">Planear</button>
-                <button class="tab-btn" data-tab="catalog">Catálogo</button>
+            <div class="planner-header">
+                <h2>Buscar Destino</h2>
+                <button class="close-sidebar">✕</button>
             </div>
-
-            <div id="plan-tab" class="tab-content active">
-                <div class="plan-options">
-                    <button id="btn-round-trip" class="option-card">
-                        <span class="icon">🔄</span>
-                        <div class="text">
-                            <strong>Ruta Circular</strong>
-                            <span>Genera un bucle desde aquí</span>
-                        </div>
-                    </button>
-                    <button id="btn-twisty-mode" class="option-card">
-                        <span class="icon">🛣️</span>
-                        <div class="text">
-                            <strong>Carreteras con Curvas</strong>
-                            <span>Evitar autovías</span>
-                        </div>
-                    </button>
-                </div>
-
-                <div class="search-section">
-                    <div id="directions-container"></div>
-                </div>
-            </div>
-
-            <div id="catalog-tab" class="tab-content">
-                <div id="routes-list" class="compact-list">
-                    <p class="empty-msg">Cargando rutas...</p>
-                </div>
-            </div>
+            <div id="directions-container"></div>
+            <div id="routes-list" class="compact-list"></div>
         </aside>
 
         <main id="map-container" class="app-view active">
             <div id="map"></div>
-            <button id="btn-recenter" class="map-recenter-btn">📍</button>
-            
             <button id="btn-start-nav" class="start-nav-btn" style="display: none;">
-                🚀 INICIAR RUTA
+                🏁 EMPEZAR RUTA
             </button>
         </main>
 
-        <!-- Vista de Rutas (Fallback / Full list) -->
-        <section id="view-routes" class="app-view">
+        <!-- Vistas Secundarias -->
+        <section id="view-settings" class="app-view">
             <header class="view-header">
                 <button class="back-btn">⬅</button>
-                <h2>Mis Rutas</h2>
+                <h2>Ajustes</h2>
                 <div class="header-spacer"></div>
             </header>
-            <div id="routes-list-full" class="content-list">
-                <p class="empty-msg">Cargando rutas...</p>
+            <div class="settings-content">
+                <div class="setting-item">
+                    <span>Modo Oscuro</span>
+                    <input type="checkbox" checked disabled>
+                </div>
+                <div class="setting-item">
+                    <span>Unidades</span>
+                    <span>Métrico (km)</span>
+                </div>
             </div>
         </section>
 
-        <!-- Vista de POIs -->
-        <section id="view-pois" class="app-view">
-            <header class="view-header">
-                <button class="back-btn">⬅</button>
-                <h2>Puntos de Interés</h2>
-                <div class="header-spacer"></div>
-            </header>
-            <div id="pois-list" class="content-list">
-                <p class="empty-msg">Cargando POIs...</p>
-            </div>
-        </section>
-
-        <div id="toast-container" aria-live="polite"></div>
-
-        <nav class="bottom-nav">
-            <button id="btn-home" class="nav-item active">
+        <!-- Barra Inferior GPS Style -->
+        <nav class="gps-nav-bar">
+            <button id="btn-map" class="gps-nav-item active">
                 <span class="icon">🏠</span>
-                <span>Explorar</span>
+                <span>Mapa</span>
             </button>
-            <button id="btn-routes-toggle" class="nav-item">
-                <span class="icon">🏍️</span>
-                <span>Planear</span>
+            <button id="btn-search" class="gps-nav-item">
+                <span class="icon">🔍</span>
+                <span>Buscar</span>
             </button>
-            <button id="btn-pois" class="nav-item">
-                <span class="icon">📍</span>
-                <span>POIs</span>
+            <button id="btn-go" class="gps-nav-item action-highlight">
+                <span class="icon">🏁</span>
+                <span>Ir</span>
             </button>
-            <button id="btn-add" class="nav-item action-btn">
-                <span class="icon">+</span>
+            <button id="btn-settings" class="gps-nav-item">
+                <span class="icon">⚙️</span>
+                <span>Ajustes</span>
             </button>
         </nav>
 
