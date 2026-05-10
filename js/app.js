@@ -207,14 +207,60 @@ function setupUI() {
     const btnImport = document.getElementById('btn-import-gpx');
     const btnAddPoi = document.getElementById('btn-add-poi');
     const btnExitNav = document.getElementById('btn-exit-nav');
+    const plannerPanel = document.getElementById('planner-panel');
+    const btnPlannerToggle = document.getElementById('btn-routes-toggle');
+    const btnStart = document.getElementById('btn-start-nav');
 
-    // Botón Salir Navegación: Oculta HUD pero mantiene la ruta si el usuario quiere
+    // Mover Directions al contenedor lateral
+    const dirCtrl = document.querySelector('.mapboxgl-ctrl-directions');
+    if (dirCtrl) document.getElementById('directions-container').appendChild(dirCtrl);
+
+    // Toggle Planner
+    btnPlannerToggle.onclick = () => plannerPanel.classList.toggle('active');
+
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
+        };
+    });
+
+    // Ruta Circular (Round Trip)
+    document.getElementById('btn-round-trip').onclick = async () => {
+        showToast('Generando bucle de 50km...', 'info');
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                const start = [pos.coords.longitude, pos.coords.latitude];
+                const distance = 0.12; 
+                
+                const waypoints = [
+                    [start[0] + distance, start[1] + distance/2],
+                    [start[0], start[1] + distance],
+                    [start[0] - distance, start[1] + distance/2]
+                ];
+                
+                appDirections.setOrigin(start);
+                appDirections.setDestination(start);
+                waypoints.forEach((wp, i) => appDirections.addWaypoint(i, wp));
+                
+                plannerPanel.classList.remove('active');
+            });
+        }
+    };
+
+    // Modo Curvas
+    document.getElementById('btn-twisty-mode').onclick = function() {
+        this.classList.toggle('active');
+        const isTwisty = this.classList.contains('active');
+        appDirections.setExclude(isTwisty ? 'motorway' : '');
+        showToast(isTwisty ? 'Evitando autovías' : 'Ruta rápida', 'info');
+    };
+
     btnExitNav.onclick = () => {
         document.getElementById('moto-hud').classList.remove('active');
-        // No eliminamos la ruta de Directions para que el usuario pueda seguir viéndola
-        // Si prefiere limpiar todo, descomenta la línea de abajo:
-        // appDirections.removeRoutes();
-        showToast('Navegación finalizada. Ruta mantenida en mapa.', 'info');
+        showToast('Navegación finalizada.', 'info');
     };
 
     btnAdd.onclick = () => modal.classList.add('active');
@@ -222,52 +268,83 @@ function setupUI() {
     btnClose.forEach(btn => {
         btn.onclick = () => {
             modal.classList.remove('active');
-            if (activeDrawing) {
-                activeDrawing.cancel();
-                activeDrawing = null;
-            }
+            if (activeDrawing) { activeDrawing.cancel(); activeDrawing = null; }
         };
     });
 
-    // Navegación de pestañas
-    document.getElementById('btn-home').onclick = () => switchView('map-container');
-    document.getElementById('btn-routes').onclick = () => switchView('view-routes');
+    document.getElementById('btn-home').onclick = () => {
+        plannerPanel.classList.remove('active');
+        switchView('map-container');
+    };
+
     document.getElementById('btn-pois').onclick = () => switchView('view-pois');
 
-    // Lógica: Añadir POI (Punto de Interés)
+    // Lógica: Añadir POI
     btnAddPoi.onclick = () => {
         modal.classList.remove('active');
-        showToast('Toca el mapa para situar el punto de interés.', 'info');
-        
+        showToast('Toca el mapa para situar el punto.', 'info');
         const clickHandler = async (e) => {
             appMap.off('click', clickHandler);
-            const nombre = prompt("Nombre del Punto de Interés:");
+            const nombre = prompt("Nombre del Punto:");
             if (!nombre) return;
-
-            const newPoi = {
-                id: generateId(),
-                nombre: nombre,
-                lat: e.lngLat.lat,
-                lng: e.lngLat.lng,
-                tipo: 'marcador',
-                fecha: new Date().toISOString()
-            };
-
-            showToast('Guardando punto...', 'info');
-            const success = await syncRoute(newPoi, 'pois'); // Usamos el path 'pois'
-            if (success) {
-                showToast('¡Punto guardado con éxito!', 'success');
-                new mapboxgl.Marker({ color: '#ff9800' })
-                    .setLngLat([newPoi.lng, newPoi.lat])
-                    .setPopup(new mapboxgl.Popup().setHTML(`<h3>${newPoi.nombre}</h3>`))
-                    .addTo(appMap);
-            } else {
-                showToast('Error al guardar. Revisa la consola.', 'error');
+            const newPoi = { id: generateId(), nombre, lat: e.lngLat.lat, lng: e.lngLat.lng, fecha: new Date().toISOString() };
+            if (await syncRoute(newPoi, 'pois')) {
+                showToast('¡Punto guardado!', 'success');
+                allPOIs.push(newPoi);
+                renderPOIsList(allPOIs);
             }
         };
-
         appMap.on('click', clickHandler);
     };
+
+    // Ruta Manual
+    btnManual.onclick = () => {
+        modal.classList.remove('active');
+        const nombre = prompt("Nombre de la ruta:");
+        if (!nombre) return;
+        switchView('map-container');
+        const finishBtn = document.createElement('button');
+        finishBtn.innerText = 'Guardar Ruta';
+        finishBtn.className = 'floating-action-btn';
+        document.body.appendChild(finishBtn);
+        activeDrawing = enableDrawingMode(appMap, null, async (geo) => {
+            finishBtn.remove();
+            const newRoute = { id: generateId(), nombre, geojson: JSON.stringify(geo), fecha: new Date().toISOString() };
+            if (await syncRoute(newRoute, 'rutas')) {
+                showToast('Ruta guardada', 'success');
+                allRoutes.push(newRoute);
+                renderRoutesList(allRoutes);
+            }
+            activeDrawing = null;
+        });
+        finishBtn.onclick = () => activeDrawing.finish();
+    };
+
+    // Importar GPX
+    btnImport.onclick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.gpx';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = async ev => {
+                try {
+                    const geojson = parseGPX(ev.target.result);
+                    const newRoute = { id: generateId(), nombre: file.name.replace('.gpx',''), geojson: JSON.stringify(geojson), fecha: new Date().toISOString() };
+                    if (await syncRoute(newRoute, 'rutas')) {
+                        showToast('GPX Importado', 'success');
+                        allRoutes.push(newRoute);
+                        renderRoutesList(allRoutes);
+                    }
+                } catch (err) { showToast('GPX inválido', 'error'); }
+                modal.classList.remove('active');
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    };
+}
 
     // Ruta Manual
     btnManual.onclick = () => {

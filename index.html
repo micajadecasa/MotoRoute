@@ -36,7 +36,7 @@
 </head>
 <body>
     <div id="app">
-        <!-- Moto HUD (Hidden by default) -->
+        <!-- Moto HUD (Navegación) -->
         <div id="moto-hud" class="hud-overlay">
             <div class="hud-top">
                 <div id="hud-instruction" class="hud-main-instruction">Calculando...</div>
@@ -48,7 +48,7 @@
                     <span class="hud-unit">km/h</span>
                 </div>
                 <div class="hud-stat">
-                    <span id="hud-limit" class="hud-value-small">--</span>
+                    <span id="hud-limit" class="hud-value-small">90</span>
                     <span class="hud-label">Límite</span>
                 </div>
                 <div class="hud-stat">
@@ -60,68 +60,86 @@
         </div>
 
         <header id="main-header">
-            <h1>MotoRoutes</h1>
-            <div id="sync-status" class="status-indicator" title="Sincronizado"></div>
+            <div class="header-content">
+                <h1>MotoRoutes <span class="badge">PRO</span></h1>
+                <div id="sync-status" class="status-indicator" title="Sincronizado"></div>
+            </div>
         </header>
 
-        <main id="map-container" role="main" class="app-view active">
+        <!-- Panel de Planificación estilo Calimoto -->
+        <aside id="planner-panel" class="planner-sidebar">
+            <div class="planner-tabs">
+                <button class="tab-btn active" data-tab="plan">Planear</button>
+                <button class="tab-btn" data-tab="catalog">Catálogo</button>
+            </div>
+
+            <div id="plan-tab" class="tab-content active">
+                <div class="plan-options">
+                    <button id="btn-round-trip" class="option-card">
+                        <span class="icon">🔄</span>
+                        <div class="text">
+                            <strong>Ruta Circular</strong>
+                            <span>Genera un bucle desde aquí</span>
+                        </div>
+                    </button>
+                    <button id="btn-twisty-mode" class="option-card">
+                        <span class="icon">🛣️</span>
+                        <div class="text">
+                            <strong>Carreteras con Curvas</strong>
+                            <span>Evitar autovías</span>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="search-section">
+                    <div id="directions-container"></div>
+                </div>
+            </div>
+
+            <div id="catalog-tab" class="tab-content">
+                <div id="routes-list" class="compact-list">
+                    <p class="empty-msg">Cargando rutas...</p>
+                </div>
+            </div>
+        </aside>
+
+        <main id="map-container">
             <div id="map"></div>
-            <button id="btn-recenter" class="map-recenter-btn" aria-label="Recentrar">📍</button>
+            <button id="btn-recenter" class="map-recenter-btn">📍</button>
+            
+            <button id="btn-start-nav" class="start-nav-btn" style="display: none;">
+                🚀 INICIAR RUTA
+            </button>
         </main>
-
-        <!-- Vista de Rutas -->
-        <section id="view-routes" class="app-view">
-            <header class="view-header">
-                <h2>Mis Rutas</h2>
-            </header>
-            <div id="routes-list" class="content-list">
-                <p class="empty-msg">Cargando rutas...</p>
-            </div>
-        </section>
-
-        <!-- Vista de POIs -->
-        <section id="view-pois" class="app-view">
-            <header class="view-header">
-                <h2>Puntos de Interés</h2>
-            </header>
-            <div id="pois-list" class="content-list">
-                <p class="empty-msg">Cargando POIs...</p>
-            </div>
-        </section>
 
         <div id="toast-container" aria-live="polite"></div>
 
-        <!-- Botón IR Flotante (Solo aparece cuando hay ruta lista) -->
-        <button id="btn-start-nav" class="start-nav-btn" style="display: none;">
-            <span class="icon">🚀</span> IR
-        </button>
-
-        <nav class="bottom-nav" role="navigation">
-            <button id="btn-home" class="nav-item active" aria-label="Inicio">
-                <span class="icon" aria-hidden="true">🏠</span>
-                <span>Inicio</span>
+        <nav class="bottom-nav">
+            <button id="btn-home" class="nav-item active">
+                <span class="icon">🏠</span>
+                <span>Explorar</span>
             </button>
-            <button id="btn-routes" class="nav-item" aria-label="Mis Rutas">
-                <span class="icon" aria-hidden="true">🏍️</span>
-                <span>Rutas</span>
+            <button id="btn-routes-toggle" class="nav-item">
+                <span class="icon">🏍️</span>
+                <span>Planear</span>
             </button>
-            <button id="btn-pois" class="nav-item" aria-label="Puntos de Interés">
-                <span class="icon" aria-hidden="true">📍</span>
+            <button id="btn-pois" class="nav-item">
+                <span class="icon">📍</span>
                 <span>POIs</span>
             </button>
-            <button id="btn-add" class="nav-item action-btn" aria-label="Añadir nueva ruta">
-                <span class="icon" aria-hidden="true">+</span>
+            <button id="btn-add" class="nav-item action-btn">
+                <span class="icon">+</span>
             </button>
         </nav>
 
-        <!-- Modales -->
-        <section id="modal-add" class="modal" aria-modal="true" role="dialog" aria-labelledby="modal-title">
+        <!-- Modal de Acciones -->
+        <section id="modal-add" class="modal">
             <div class="modal-content">
-                <h2 id="modal-title">Nueva Entrada</h2>
+                <h2>Nueva Entrada</h2>
                 <button id="btn-import-gpx" class="primary-btn">Importar GPX</button>
                 <button id="btn-manual-route" class="secondary-btn">Dibujar Ruta</button>
-                <button id="btn-add-poi" class="secondary-btn">Añadir Punto de Interés</button>
-                <button class="close-modal" aria-label="Cerrar modal">Cancelar</button>
+                <button id="btn-add-poi" class="secondary-btn">Añadir POI</button>
+                <button class="close-modal">Cancelar</button>
             </div>
         </section>
     </div>
