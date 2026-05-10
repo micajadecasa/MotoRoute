@@ -13,6 +13,7 @@
     <!-- Estilos -->
     <link rel="stylesheet" href="css/style.css">
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/mapbox-gl-directions.css" type="text/css">
     
     <!-- Fuentes (System fallback para privacidad/rendimiento) -->
     <!-- SPA Routing Hack for GitHub Pages -->
@@ -35,13 +36,37 @@
 </head>
 <body>
     <div id="app">
-        <header>
+        <!-- Moto HUD (Hidden by default) -->
+        <div id="moto-hud" class="hud-overlay">
+            <div class="hud-top">
+                <div id="hud-instruction" class="hud-main-instruction">Calculando...</div>
+                <div id="hud-next-dist" class="hud-sub-instruction">-- m</div>
+            </div>
+            <div class="hud-bottom">
+                <div class="hud-stat">
+                    <span id="hud-speed" class="hud-value">0</span>
+                    <span class="hud-unit">km/h</span>
+                </div>
+                <div class="hud-stat">
+                    <span id="hud-limit" class="hud-value-small">--</span>
+                    <span class="hud-label">Límite</span>
+                </div>
+                <div class="hud-stat">
+                    <span id="hud-eta" class="hud-value-small">--:--</span>
+                    <span class="hud-label">Llegada</span>
+                </div>
+            </div>
+            <button id="btn-exit-nav" class="hud-exit-btn">SALIR</button>
+        </div>
+
+        <header id="main-header">
             <h1>MotoRoutes</h1>
             <div id="sync-status" class="status-indicator" title="Sincronizado"></div>
         </header>
 
         <main id="map-container" role="main">
             <div id="map"></div>
+            <button id="btn-recenter" class="map-recenter-btn" aria-label="Recentrar">📍</button>
         </main>
 
         <div id="toast-container" aria-live="polite"></div>
@@ -77,6 +102,7 @@
 
     <!-- Librerías Externas -->
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/mapbox-gl-directions.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tmcw/togeojson@0.16.0/dist/togeojson.umd.min.js"></script>
 
     <!-- App Logic -->

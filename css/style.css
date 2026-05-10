@@ -269,6 +269,131 @@ button:active {
     z-index: 50;
 }
 
+/* Recentrar Button */
+.map-recenter-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: var(--surface-color);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    z-index: 5;
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 0;
+}
+
+/* Moto HUD Overlay */
+.hud-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    padding: 2rem 1.5rem;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+}
+
+.hud-overlay.active {
+    display: flex;
+}
+
+.hud-top {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+
+.hud-main-instruction {
+    font-size: 2.8rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+}
+
+.hud-sub-instruction {
+    font-size: 1.8rem;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.hud-bottom {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1.2fr;
+    gap: 1rem;
+    padding: 2rem 0;
+    border-top: 2px solid #222;
+}
+
+.hud-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hud-value {
+    font-size: 4rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.hud-value-small {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.hud-unit, .hud-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.hud-exit-btn {
+    background: #ff5252;
+    color: white;
+    font-size: 1.4rem;
+    font-weight: 900;
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    box-shadow: 0 10px 20px rgba(255, 82, 82, 0.3);
+}
+
+/* Mapbox Directions Customization */
+.mapboxgl-ctrl-directions {
+    margin-top: 100px !important; /* Avoid header */
+    width: 90% !important;
+    max-width: 400px !important;
+    border-radius: 15px !important;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4) !important;
+}
+
+.directions-control.directions-control-inputs {
+    background: var(--surface-color) !important;
+    padding: 15px !important;
+}
+
+.mapboxgl-ctrl-directions .mapboxgl-ctrl-geocoder input[type='text'] {
+    color: white !important;
+    background: #333 !important;
+    padding: 12px 35px !important;
+}
+
 .status-indicator {
     width: 12px;
     height: 12px;

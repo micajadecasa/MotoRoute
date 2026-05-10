@@ -1,9 +1,7 @@
 import { CONFIG } from './config.js';
 
-let currentDrawPoints = [];
-
 /**
- * Inicializa el mapa
+ * Inicializa el mapa con navegación
  */
 export function initMap() {
     mapboxgl.accessToken = CONFIG.MAPBOX_TOKEN;
@@ -17,23 +15,44 @@ export function initMap() {
         antialias: true
     });
 
-    // Controles
-    map.addControl(new mapboxgl.GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: true,
-        showUserHeading: true
-    }), 'top-right');
+    // Control de Navegación (Directions)
+    const directions = new MapboxDirections({
+        accessToken: mapboxgl.accessToken,
+        unit: 'metric',
+        profile: 'mapbox/driving',
+        alternatives: false,
+        geometries: 'geojson',
+        controls: { instructions: true, profileSwitcher: false },
+        placeholderOrigin: 'Mi ubicación',
+        placeholderDestination: '¿A dónde vamos?'
+    });
 
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.addControl(directions, 'top-left');
 
-    return map;
+    // Botón de recentrar
+    const btnRecenter = document.getElementById('btn-recenter');
+    if (btnRecenter) {
+        btnRecenter.onclick = () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    map.flyTo({
+                        center: [pos.coords.longitude, pos.coords.latitude],
+                        zoom: 15,
+                        pitch: 60
+                    });
+                }, err => console.warn(err), { enableHighAccuracy: true });
+            }
+        };
+    }
+
+    return { map, directions };
 }
 
 /**
  * Dibuja una ruta GeoJSON en el mapa
  */
 export function addRouteToMap(map, geoJson, id = `route-${Date.now()}`) {
-    if (!geoJson) return;
+    if (!geoJson || !map) return;
 
     if (map.getSource(id)) {
         map.getSource(id).setData(geoJson);
@@ -57,29 +76,28 @@ export function addRouteToMap(map, geoJson, id = `route-${Date.now()}`) {
         }
     });
 
-    // Ajustar vista si hay coordenadas
     try {
         const coordinates = geoJson.features[0].geometry.coordinates;
         const bounds = coordinates.reduce((acc, coord) => {
             return acc.extend(coord);
         }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
-
         map.fitBounds(bounds, { padding: 50 });
-    } catch (e) {
-        console.warn("Could not fit bounds", e);
-    }
+    } catch (e) {}
 }
 
 /**
  * Activa el modo de dibujo manual
  */
 export function enableDrawingMode(map, onPointAdded, onFinished) {
+    if (!map) return;
     map.getCanvas().style.cursor = 'crosshair';
-    currentDrawPoints = [];
+    let currentDrawPoints = [];
     
     const drawId = 'manual-draw-layer';
-    if (map.getSource(drawId)) map.removeLayer(drawId);
-    if (map.getSource(drawId)) map.removeSource(drawId);
+    if (map.getSource(drawId)) {
+        map.removeLayer(drawId);
+        map.removeSource(drawId);
+    }
 
     map.addSource(drawId, {
         type: 'geojson',
@@ -99,13 +117,10 @@ export function enableDrawingMode(map, onPointAdded, onFinished) {
     const clickHandler = (e) => {
         const coords = [e.lngLat.lng, e.lngLat.lat];
         currentDrawPoints.push(coords);
-        
-        // Actualizar capa de dibujo
         map.getSource(drawId).setData({
             type: 'Feature',
             geometry: { type: 'LineString', coordinates: currentDrawPoints }
         });
-
         if (onPointAdded) onPointAdded(currentDrawPoints);
     };
 
