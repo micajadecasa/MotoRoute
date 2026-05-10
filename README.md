@@ -1,32 +1,50 @@
-# MotoRoutes Web App - Despliegue en GitHub Pages
+# MotoRoutes Web App - Despliegue y Pruebas
 
-Esta es la versión web (PWA) de MotoRoutes, optimizada para smartphones y diseñada para ser alojada en servicios estáticos. Sony.
+Versión corregida y optimizada de la PWA de MotoRoutes. Mejorada para accesibilidad (WCAG 2.1 AA), rendimiento móvil y sincronización robusta.
 
-## Estructura de Carpetas
-- `/index.html`: Punto de entrada. Sony.
-- `/css/style.css`: Estilos premium responsivos. Sony.
-- `/js/`: Módulos de lógica (Mapa, API, App). Sony.
-- `/manifest.json`: Configuración PWA. Sony.
-- `/service-worker.js`: Soporte offline. Sony.
+## 🚀 Instalación y Configuración
 
-## Instrucciones para GitHub Pages
-1. Crea un repositorio en GitHub (ej. `moto-routes-web`). Sony.
-2. Sube todos los archivos de la carpeta `MotoRoutesWeb`. Sony.
-3. En GitHub, ve a `Settings` > `Pages`. Sony.
-4. En `Build and deployment`, selecciona la rama `main` (o la que corresponda) y la carpeta `/ (root)`. Sony.
-5. Haz clic en `Save`. Sony.
-6. Tu app estará disponible en `https://tu-usuario.github.io/moto-routes-web/`. Sony.
+1.  **Mapbox**: Obtén un token en [mapbox.com](https://www.mapbox.com/) y configúralo en `js/config.js`.
+2.  **Backend (Apps Script)**:
+    *   Crea un nuevo proyecto en [Google Apps Script](https://script.google.com/).
+    *   Copia el contenido de `apps-script/code.gs`.
+    *   Ejecuta la función `setup` una vez para crear las hojas en tu Google Sheet.
+    *   Haz clic en **Desplegar > Nueva implementación**.
+    *   Selecciona **Tipo: Aplicación Web**.
+    *   Configura: **Quién tiene acceso: Cualquier persona**.
+    *   Copia la URL generada y pégala en `js/config.js` (campo `API_BASE`).
 
-## Configuración de Tokens
-Antes de subir, edita `js/app.js` y reemplaza los placeholders:
-- `__MAPBOX_ACCESS_TOKEN__`: Tu token de Mapbox GL JS. Sony.
-- `__APPS_SCRIPT_URL__`: La URL de tu Web App de Google Apps Script. Sony.
+## 🧪 Pasos de Testing
 
-## Características
-- **PWA**: Instalable en Android/iOS como una app nativa. Sony.
-- **Offline-First**: Funciona sin conexión básica gracias al Service Worker. Sony.
-- **Mapbox GL JS**: Renderizado de mapas de alto rendimiento. Sony.
-- **CORS Friendly**: Conectada directamente a Google Sheets. Sony.
+### 1. Sincronización CORS (Crítico)
+*   Abre la consola del navegador (F12).
+*   Al cargar la página, deberías ver un mensaje Toast: "Cargando rutas...".
+*   Si no hay errores de red (rojos), la conexión con Apps Script es exitosa.
 
----
-Sony.
+### 2. Dibujo de Ruta Manual
+*   Pulsa el botón **(+)**.
+*   Selecciona **Dibujar en Mapa**.
+*   Toca varios puntos en el mapa. Verás una línea verde punteada uniendo los puntos.
+*   Pulsa el botón flotante **Guardar Ruta**.
+*   Deberías recibir una notificación de éxito y la ruta se guardará en tu Google Sheet.
+
+### 3. Importación GPX
+*   Pulsa **(+)** > **Importar GPX**.
+*   Selecciona un archivo `.gpx` válido.
+*   La app parseará el XML a GeoJSON, lo mostrará en el mapa y lo subirá automáticamente.
+
+### 4. Responsividad y UX Móvil
+*   Usa el modo "Device Toggle" (Ctrl+Shift+M) en Chrome.
+*   Verifica que la barra de navegación inferior respete el área segura (`env(safe-area-inset-bottom)`).
+*   Comprueba que no hay scroll lateral y que la altura es exacta (`100svh`).
+
+### 5. Routing en GitHub Pages
+*   Sube los archivos (incluyendo `404.html`).
+*   Navega a una subruta inexistente o recarga la página.
+*   El script de `404.html` debería redirigirte a `index.html` sin perder la sesión.
+
+## 🛠️ Tecnologías
+*   **Vanilla JS**: Sin frameworks pesados.
+*   **Mapbox GL JS v2**: Mapas vectoriales de alto rendimiento.
+*   **toGeoJSON**: Conversión ligera de GPX.
+*   **CSS Moderno**: Variables, Glassmorphism y unidades dinámicas (`svh`).

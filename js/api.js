@@ -1,8 +1,14 @@
-const API_BASE = "https://script.google.com/macros/s/AKfycbw4T2dES8beEeIrrk4rt96tG5CTFUc2hH_uD0pgU1JIrd2AqKrZVhpffPsGJwc0FuZzOw/exec";
+import { CONFIG } from './config.js';
 
+/**
+ * Obtiene todas las rutas desde Apps Script
+ */
 export async function fetchRoutes() {
     try {
-        const response = await fetch(`${API_BASE}?path=rutas`);
+        const response = await fetch(`${CONFIG.API_BASE}?path=rutas`);
+        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
         const result = await response.json();
         return result.success ? result.data : [];
     } catch (error) {
@@ -11,14 +17,22 @@ export async function fetchRoutes() {
     }
 }
 
+/**
+ * Sincroniza una ruta con el backend.
+ * Usa 'text/plain' para evitar el preflight OPTIONS de CORS en Apps Script.
+ */
 export async function syncRoute(routeData) {
     try {
-        const response = await fetch(`${API_BASE}?path=rutas`, {
+        const response = await fetch(`${CONFIG.API_BASE}?path=rutas`, {
             method: "POST",
-            mode: "cors", // Importante para permitir redirecciones
+            mode: "cors",
+            headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+            },
             body: JSON.stringify(routeData)
-            // Eliminamos el header 'application/json' para evitar el preflight OPTIONS
         });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const result = await response.json();
         return result.success === true;
@@ -28,9 +42,15 @@ export async function syncRoute(routeData) {
     }
 }
 
+/**
+ * Obtiene todos los puntos de interés
+ */
 export async function fetchPOIs() {
     try {
-        const response = await fetch(`${API_BASE}?path=pois`);
+        const response = await fetch(`${CONFIG.API_BASE}?path=pois`);
+        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
         const result = await response.json();
         return result.success ? result.data : [];
     } catch (error) {

@@ -1,74 +1,104 @@
-import { initMap, addRouteToMap } from './map.js';
+import { initMap, addRouteToMap, enableDrawingMode } from './map.js';
 import { fetchRoutes, syncRoute } from './api.js';
+import { parseGPX, showToast, generateId } from './utils.js';
+
+let appMap;
+let activeDrawing = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Inicializar mapa
-    const map = initMap();
+    appMap = initMap();
 
     // Esperar a que el mapa cargue
-    map.on('load', async () => {
+    appMap.on('load', async () => {
+        showToast('Cargando rutas...', 'info');
         try {
             const routes = await fetchRoutes();
             routes.forEach(route => {
-                if (route.gpx) {
-                    // Aquí podrías parsear el GPX a GeoJSON para dibujarlo
-                    // addRouteToMap(map, { geoJson: parsedGpx });
+                if (route.geojson) {
+                    try {
+                        const geo = JSON.parse(route.geojson);
+                        addRouteToMap(appMap, geo, `route-${route.id}`);
+                    } catch (e) {
+                        console.warn("Error parsing geojson for route", route.id);
+                    }
                 }
             });
+            showToast(`${routes.length} rutas cargadas`, 'success');
         } catch (error) {
             console.error("Error inicial:", error);
+            showToast('Error al cargar rutas', 'error');
         }
     });
 
     // Configurar UI
-    setupUI(map);
+    setupUI();
 });
 
-function setupUI(map) {
+function setupUI() {
     const modal = document.getElementById('modal-add');
     const btnAdd = document.getElementById('btn-add');
-    const btnClose = document.querySelector('.close-modal');
+    const btnClose = document.querySelectorAll('.close-modal');
     const btnManual = document.getElementById('btn-manual-route');
     const btnImport = document.getElementById('btn-import-gpx');
 
     // Abrir modal
     btnAdd.addEventListener('click', () => {
-        modal.style.display = 'block';
+        modal.classList.add('active');
     });
 
     // Cerrar modal
-    btnClose.addEventListener('click', () => {
-        modal.style.display = 'none';
+    btnClose.forEach(btn => {
+        btn.addEventListener('click', () => {
+            modal.classList.remove('active');
+            if (activeDrawing) {
+                activeDrawing.cancel();
+                activeDrawing = null;
+            }
+        });
     });
 
     // Cerrar modal al pulsar fuera
-    window.onclick = (event) => {
+    modal.addEventListener('click', (event) => {
         if (event.target === modal) {
-            modal.style.display = 'none';
+            modal.classList.remove('active');
         }
-    };
+    });
 
     // Lógica: Ruta Manual
     btnManual.addEventListener('click', () => {
-        modal.style.display = 'none';
-        alert('Haz clic en el mapa para marcar puntos. (Simulado)');
+        modal.classList.remove('active');
+        showToast('Toca el mapa para añadir puntos. Pulsa el botón de Guardar al terminar.', 'info');
         
-        map.getCanvas().style.cursor = 'crosshair';
-        map.once('click', (e) => {
-            console.log("Punto marcado:", e.lngLat);
+        // Crear botón flotante para finalizar
+        const finishBtn = document.createElement('button');
+        finishBtn.id = 'btn-finish-draw';
+        finishBtn.innerText = 'Guardar Ruta';
+        finishBtn.className = 'floating-action-btn';
+        document.body.appendChild(finishBtn);
+
+        activeDrawing = enableDrawingMode(appMap, null, async (finalGeoJSON) => {
+            finishBtn.remove();
+            showToast('Guardando ruta...', 'info');
+            
             const newRoute = {
-                id: Date.now().toString(),
+                id: generateId(),
                 nombre: "Ruta Manual " + new Date().toLocaleDateString(),
-                lat: e.lngLat.lat,
-                lng: e.lngLat.lng,
-                gpx: ""
+                geojson: JSON.stringify(finalGeoJSON),
+                fecha: new Date().toISOString()
             };
-            syncRoute(newRoute).then(success => {
-                if (success) alert('¡Ruta guardada en Google Sheets!');
-                else alert('Error de sincronización (CORS). Revisa la configuración de Apps Script.');
-            });
-            map.getCanvas().style.cursor = '';
+
+            const success = await syncRoute(newRoute);
+            if (success) {
+                showToast('¡Ruta guardada con éxito!', 'success');
+                addRouteToMap(appMap, finalGeoJSON, `route-${newRoute.id}`);
+            } else {
+                showToast('Error al sincronizar. Revisa la consola.', 'error');
+            }
+            activeDrawing = null;
         });
+
+        finishBtn.onclick = () => activeDrawing.finish();
     });
 
     // Lógica: Importar GPX
@@ -80,16 +110,30 @@ function setupUI(map) {
             const file = e.target.files[0];
             const reader = new FileReader();
             reader.onload = async event => {
-                const content = event.target.result;
-                const newRoute = {
-                    id: Date.now().toString(),
-                    nombre: file.name,
-                    gpx: content
-                };
-                const success = await syncRoute(newRoute);
-                if (success) alert('¡GPX subido con éxito!');
-                else alert('Error al subir GPX. Revisa el CORS.');
-                modal.style.display = 'none';
+                try {
+                    const content = event.target.result;
+                    const geojson = parseGPX(content);
+                    
+                    showToast('Subiendo GPX...', 'info');
+                    
+                    const newRoute = {
+                        id: generateId(),
+                        nombre: file.name.replace('.gpx', ''),
+                        geojson: JSON.stringify(geojson),
+                        fecha: new Date().toISOString()
+                    };
+
+                    const success = await syncRoute(newRoute);
+                    if (success) {
+                        showToast('GPX importado con éxito', 'success');
+                        addRouteToMap(appMap, geojson, `route-${newRoute.id}`);
+                    } else {
+                        showToast('Error al subir GPX', 'error');
+                    }
+                } catch (err) {
+                    showToast('Error: ' + err.message, 'error');
+                }
+                modal.classList.remove('active');
             };
             reader.readAsText(file);
         };
@@ -102,6 +146,9 @@ function setupUI(map) {
             if (this.id === 'btn-add') return;
             document.querySelector('.nav-item.active').classList.remove('active');
             this.classList.add('active');
+            
+            // Aquí podrías implementar navegación SPA real
+            // history.pushState({page: this.id}, "", `/${this.id}`);
         });
     });
 }
