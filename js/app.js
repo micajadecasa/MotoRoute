@@ -19,6 +19,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         showToast('MotoRoute Cargado', 'success');
         setupNavigationTracking();
         loadData();
+        
+        // IR A MI POSICIÓN AL INICIAR
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                appMap.flyTo({
+                    center: [pos.coords.longitude, pos.coords.latitude],
+                    zoom: 14,
+                    duration: 2000
+                });
+            }, null, { enableHighAccuracy: true });
+        }
     });
 
     setupUI();
@@ -26,76 +37,53 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function setupAndroidBackHandler() {
-    // Empujamos un estado inicial
     window.history.pushState({ view: 'map' }, '');
-
-    window.onpopstate = (event) => {
+    window.onpopstate = () => {
         const planner = document.getElementById('planner-panel');
         const hud = document.getElementById('moto-hud');
-
         if (hud.classList.contains('active')) {
-            // Si estamos navegando, el primer "atrás" pregunta o sale de nav
-            if (confirm("¿Deseas salir de la navegación?")) {
-                document.getElementById('btn-exit-nav').click();
-            }
+            if (confirm("¿Deseas salir de la navegación?")) document.getElementById('btn-exit-nav').click();
             window.history.pushState({ view: 'map' }, '');
             return;
         }
-
         if (planner.classList.contains('active')) {
             planner.classList.remove('active');
             window.history.pushState({ view: 'map' }, '');
             return;
         }
-
         const activeView = document.querySelector('.app-view.active');
         if (activeView && activeView.id !== 'map-container') {
             switchView('map-container');
             window.history.pushState({ view: 'map' }, '');
             return;
         }
-
-        // Si ya estamos en el mapa, doble clic para salir
         backPressCount++;
         if (backPressCount === 1) {
             showToast('Pulsa otra vez para salir', 'info');
             setTimeout(() => { backPressCount = 0; }, 2000);
             window.history.pushState({ view: 'map' }, '');
-        } else {
-            // En una PWA real no podemos "cerrar" la pestaña fácilmente, 
-            // pero esto es lo más cercano al comportamiento nativo.
-            window.history.back();
-        }
+        } else { window.history.back(); }
     };
 }
 
 async function loadData() {
     try {
-        const [routes, pois] = await Promise.all([
-            fetchRoutes('rutas'),
-            fetchRoutes('pois')
-        ]);
+        const [routes, pois] = await Promise.all([fetchRoutes('rutas'), fetchRoutes('pois')]);
         allRoutes = routes || [];
         allPOIs = pois || [];
-        allRoutes.forEach(r => {
-            if (r.geojson) addRouteToMap(appMap, JSON.parse(r.geojson), `route-${r.id}`);
-        });
-    } catch (e) {
-        showToast('Error de datos', 'error');
-    }
+        allRoutes.forEach(r => { if (r.geojson) addRouteToMap(appMap, JSON.parse(r.geojson), `route-${r.id}`); });
+    } catch (e) { showToast('Error de datos', 'error'); }
 }
 
 function switchView(viewId) {
     document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
     const target = document.getElementById(viewId);
     if (target) target.classList.add('active');
-    
     document.querySelectorAll('.gps-nav-item').forEach(item => {
         item.classList.remove('active');
         if (viewId === 'map-container' && item.id === 'btn-map') item.classList.add('active');
         if (viewId === 'view-settings' && item.id === 'btn-settings') item.classList.add('active');
     });
-
     if (viewId === 'map-container') appMap.resize();
 }
 
@@ -112,7 +100,8 @@ function setupNavigationTracking() {
         btnStartSidebar.style.display = 'none';
         document.getElementById('planner-panel').classList.remove('active');
         
-        appMap.easeTo({ pitch: 60, zoom: 17, duration: 1000 });
+        // MODO PRIMERA PERSONA ZOOM 15.5
+        appMap.easeTo({ pitch: 60, zoom: 15.5, duration: 1000 });
         updateHUD(route);
     };
 
@@ -165,19 +154,20 @@ function setupUI() {
     };
 
     document.getElementById('btn-recenter').onclick = () => {
-        if (navigator.geolocation) navigator.geolocation.getCurrentPosition(p => { appMap.flyTo({ center: [p.coords.longitude, p.coords.latitude], zoom: 15 }); });
-    };
-
-    // Toggle Tema Claro/Oscuro
-    document.getElementById('toggle-theme').onchange = (e) => {
-        if (e.target.checked) {
-            document.body.classList.remove('light-mode');
-        } else {
-            document.body.classList.add('light-mode');
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(p => {
+                appMap.flyTo({ center: [p.coords.longitude, p.coords.latitude], zoom: 15.5 });
+            }, null, { enableHighAccuracy: true });
         }
     };
 
-    // Mover Directions
+    document.getElementById('btn-compass').onclick = () => { appMap.easeTo({ bearing: 0, pitch: 0 }); };
+
+    document.getElementById('toggle-theme').onchange = (e) => {
+        if (e.target.checked) document.body.classList.remove('light-mode');
+        else document.body.classList.add('light-mode');
+    };
+
     const moveSearch = () => {
         const dir = document.querySelector('.mapboxgl-ctrl-directions');
         if (dir) { document.getElementById('directions-container').appendChild(dir); return true; }

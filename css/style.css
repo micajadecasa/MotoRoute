@@ -581,19 +581,37 @@ button:active {
     opacity: 0.7;
 }
 
-/* Settings View */
-.settings-content {
-    padding: 2rem;
-}
-
+/* Settings View Legibility */
 .setting-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1.2rem;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.08); /* Fondo sutil para modo oscuro */
     border-radius: 15px;
     margin-bottom: 1rem;
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+body.light-mode .setting-item {
+    background: #e0e0e0; /* Gris diferenciado en modo claro */
+    color: #1a1a1a;
+    border: 1px solid #ccc;
+}
+
+/* Force Orange Start Buttons */
+.start-nav-btn, 
+#btn-start-nav-sidebar.primary-btn {
+    background: #ff9800 !important;
+    color: white !important;
+    font-weight: 800;
+    box-shadow: 0 8px 20px rgba(255, 152, 0, 0.4);
+}
+
+/* Ensure Recenter is always on top */
+.map-controls {
+    z-index: 999;
 }
 
 /* Fix for Mapbox Directions Icons (Missing assets) */
