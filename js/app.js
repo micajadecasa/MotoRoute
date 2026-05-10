@@ -222,6 +222,17 @@ function setupUI() {
         const interval = setInterval(() => { if (moveSearch()) clearInterval(interval); }, 500);
     }
 
+    // Botones de retorno (Volver al mapa)
+    document.querySelectorAll('.back-btn').forEach(btn => {
+        btn.onclick = () => switchView('map-container');
+    });
+
+    // Botón de búsqueda en el header
+    document.getElementById('btn-header-search').onclick = () => {
+        window.plannerPanel.classList.toggle('active');
+        switchView('map-container');
+    };
+
     // 2. Navegación Inferior
     btnPlannerToggle.onclick = () => {
         window.plannerPanel.classList.toggle('active');

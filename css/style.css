@@ -439,14 +439,43 @@ button:active {
 }
 
 .view-header {
-    padding: 6rem 1.5rem 1rem; /* Spacing for fixed main header */
+    padding: 1.2rem 1.5rem;
     background: var(--surface-color);
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+}
+
+.back-btn:active {
+    background: var(--primary-color);
+    transform: scale(0.9);
+}
+
+.header-spacer {
+    width: 40px; /* Equilibra el back-btn para centrar el título */
 }
 
 .view-header h2 {
-    font-size: 1.8rem;
-    font-weight: 800;
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .content-list {
@@ -572,8 +601,33 @@ button:active {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 100%;
-    padding: 0 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.icon-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+
+.icon-btn:hover {
+    background: var(--primary-color);
 }
 
 .badge {
