@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadData() {
     try {
         const [routes, pois] = await Promise.all([
-            fetchRoutes(),
+            fetchRoutes('rutas'),
             fetchRoutes('pois')
         ]);
         
@@ -36,6 +36,7 @@ async function loadData() {
         renderRoutesList(allRoutes);
         renderPOIsList(allPOIs);
         
+        // Dibujar rutas existentes
         allRoutes.forEach(route => {
             if (route.geojson) {
                 try {
@@ -45,14 +46,15 @@ async function loadData() {
             }
         });
 
+        // Marcadores de POIs
         allPOIs.forEach(poi => {
             new mapboxgl.Marker({ color: '#ff9800' })
-                .setLngLat([poi.lng, poi.lat])
+                .setLngLat([parseFloat(poi.lng), parseFloat(poi.lat)])
                 .setPopup(new mapboxgl.Popup().setHTML(`<h3>${poi.nombre}</h3>`))
                 .addTo(appMap);
         });
     } catch (error) {
-        showToast('Error cargando datos', 'error');
+        showToast('Error cargando datos del servidor', 'error');
     }
 }
 
@@ -80,6 +82,7 @@ function renderRoutesList(routes) {
             const route = allRoutes.find(r => r.id == id);
             if (route && route.geojson) {
                 switchView('map-container');
+                if (window.plannerPanel) window.plannerPanel.classList.remove('active');
                 const geo = JSON.parse(route.geojson);
                 addRouteToMap(appMap, geo, `route-${id}`);
             }
@@ -107,7 +110,8 @@ function renderPOIsList(pois) {
             const poi = allPOIs.find(p => p.id == id);
             if (poi) {
                 switchView('map-container');
-                appMap.flyTo({ center: [poi.lng, poi.lat], zoom: 15 });
+                if (window.plannerPanel) window.plannerPanel.classList.remove('active');
+                appMap.flyTo({ center: [parseFloat(poi.lng), parseFloat(poi.lat)], zoom: 15 });
             }
         };
     });
@@ -121,11 +125,13 @@ function switchView(viewId) {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
         if (viewId === 'map-container' && item.id === 'btn-home') item.classList.add('active');
-        if (item.id === 'btn-routes-toggle' && document.getElementById('planner-panel').classList.contains('active')) item.classList.add('active');
         if (viewId === 'view-pois' && item.id === 'btn-pois') item.classList.add('active');
     });
 
-    if (viewId === 'map-container') appMap.resize();
+    if (viewId === 'map-container') {
+        appMap.resize();
+        if (window.plannerPanel) window.plannerPanel.classList.remove('active');
+    }
 }
 
 function setupNavigationTracking() {
@@ -195,13 +201,15 @@ function setupUI() {
     const btnImport = document.getElementById('btn-import-gpx');
     const btnAddPoi = document.getElementById('btn-add-poi');
     const btnExitNav = document.getElementById('btn-exit-nav');
-    const plannerPanel = document.getElementById('planner-panel');
+    window.plannerPanel = document.getElementById('planner-panel');
     const btnPlannerToggle = document.getElementById('btn-routes-toggle');
 
+    // 1. Buscador en el sidebar
     const moveSearch = () => {
         const dirCtrl = document.querySelector('.mapboxgl-ctrl-directions');
-        if (dirCtrl) {
-            document.getElementById('directions-container').appendChild(dirCtrl);
+        const container = document.getElementById('directions-container');
+        if (dirCtrl && container) {
+            container.appendChild(dirCtrl);
             return true;
         }
         return false;
@@ -210,21 +218,96 @@ function setupUI() {
         const interval = setInterval(() => { if (moveSearch()) clearInterval(interval); }, 500);
     }
 
+    // 2. Navegación Inferior
     btnPlannerToggle.onclick = () => {
-        plannerPanel.classList.toggle('active');
-        switchView('map-container');
+        window.plannerPanel.classList.toggle('active');
+        if (window.plannerPanel.classList.contains('active')) {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            btnPlannerToggle.classList.add('active');
+        } else {
+            switchView('map-container');
+        }
     };
 
+    document.getElementById('btn-home').onclick = () => switchView('map-container');
+    document.getElementById('btn-pois').onclick = () => switchView('view-pois');
+    btnAdd.onclick = () => modal.classList.add('active');
+
+    // 3. Tabs del Sidebar
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
+            const target = document.getElementById(`${btn.dataset.tab}-tab`);
+            if (target) target.classList.add('active');
         };
     });
 
-    document.getElementById('btn-round-trip').onclick = async () => {
-        showToast('Generando bucle de 50km...', 'info');
+    // 4. Importar GPX
+    btnImport.onclick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.gpx';
+        input.style.display = 'none';
+        document.body.appendChild(input); // Necesario para algunos navegadores móviles
+        
+        input.onchange = e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async ev => {
+                try {
+                    const geo = parseGPX(ev.target.result);
+                    const n = prompt("Nombre de la ruta:", file.name.replace('.gpx',''));
+                    if (!n) return;
+                    const r = { id: generateId(), nombre: n, geojson: JSON.stringify(geo), fecha: new Date().toISOString() };
+                    showToast('Guardando ruta...', 'info');
+                    if (await syncRoute(r, 'rutas')) {
+                        showToast('GPX Importado OK', 'success');
+                        allRoutes.push(r);
+                        renderRoutesList(allRoutes);
+                        addRouteToMap(appMap, geo, `route-${r.id}`);
+                    }
+                } catch (err) { showToast('Error al procesar GPX', 'error'); }
+                modal.classList.remove('active');
+                input.remove();
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    };
+
+    // 5. Ruta Manual
+    btnManual.onclick = () => {
+        modal.classList.remove('active');
+        const n = prompt("Nombre de la nueva ruta:");
+        if (!n) return;
+        switchView('map-container');
+        
+        const fb = document.createElement('button');
+        fb.innerText = 'GUARDAR RUTA';
+        fb.className = 'floating-action-btn';
+        fb.style.zIndex = "9999";
+        document.body.appendChild(fb);
+
+        activeDrawing = enableDrawingMode(appMap, null, async (g) => {
+            fb.remove();
+            const r = { id: generateId(), nombre: n, geojson: JSON.stringify(g), fecha: new Date().toISOString() };
+            showToast('Sincronizando...', 'info');
+            if (await syncRoute(r, 'rutas')) {
+                showToast('¡Ruta guardada!', 'success');
+                allRoutes.push(r);
+                renderRoutesList(allRoutes);
+                addRouteToMap(appMap, g, `route-${r.id}`);
+            }
+            activeDrawing = null;
+        });
+        fb.onclick = () => activeDrawing.finish();
+    };
+
+    // 6. Otras funciones
+    document.getElementById('btn-round-trip').onclick = () => {
+        showToast('Generando bucle circular...', 'info');
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(pos => {
                 const start = [pos.coords.longitude, pos.coords.latitude];
@@ -237,7 +320,7 @@ function setupUI() {
                 appDirections.setOrigin(start);
                 appDirections.setDestination(start);
                 waypoints.forEach((wp, i) => appDirections.addWaypoint(i, wp));
-                plannerPanel.classList.remove('active');
+                window.plannerPanel.classList.remove('active');
             });
         }
     };
@@ -245,7 +328,7 @@ function setupUI() {
     document.getElementById('btn-twisty-mode').onclick = function() {
         this.classList.toggle('active');
         appDirections.setExclude(this.classList.contains('active') ? 'motorway' : '');
-        showToast(this.classList.contains('active') ? 'Evitando autovías' : 'Ruta rápida', 'info');
+        showToast(this.classList.contains('active') ? 'Ruta de curvas activada' : 'Ruta estándar', 'info');
     };
 
     btnExitNav.onclick = () => {
@@ -253,7 +336,6 @@ function setupUI() {
         showToast('Navegación finalizada.', 'info');
     };
 
-    btnAdd.onclick = () => modal.classList.add('active');
     btnClose.forEach(btn => {
         btn.onclick = () => {
             modal.classList.remove('active');
@@ -261,76 +343,21 @@ function setupUI() {
         };
     });
 
-    document.getElementById('btn-home').onclick = () => {
-        plannerPanel.classList.remove('active');
-        switchView('map-container');
-    };
-    document.getElementById('btn-pois').onclick = () => {
-        plannerPanel.classList.remove('active');
-        switchView('view-pois');
-    };
-
     btnAddPoi.onclick = () => {
         modal.classList.remove('active');
-        showToast('Toca el mapa para situar el punto.', 'info');
+        showToast('Toca el mapa para fijar el punto.', 'info');
         const h = async (e) => {
             appMap.off('click', h);
-            const n = prompt("Nombre del Punto:");
+            const n = prompt("Nombre del POI:");
             if (!n) return;
-            const p = { id: generateId(), nombre: n, lat: e.lngLat.lat, lng: e.lngLat.lng, fecha: new Date().toISOString() };
+            const p = { id: generateId(), nombre: n, lat: e.lngLat.lat, lng: e.lngLat.lng, tipo: 'marcador', fecha: new Date().toISOString() };
             if (await syncRoute(p, 'pois')) {
                 showToast('¡Punto guardado!', 'success');
                 allPOIs.push(p);
                 renderPOIsList(allPOIs);
+                new mapboxgl.Marker({ color: '#ff9800' }).setLngLat([p.lng, p.lat]).addTo(appMap);
             }
         };
         appMap.on('click', h);
-    };
-
-    btnManual.onclick = () => {
-        modal.classList.remove('active');
-        const n = prompt("Nombre de la ruta:");
-        if (!n) return;
-        switchView('map-container');
-        const fb = document.createElement('button');
-        fb.innerText = 'Guardar Ruta';
-        fb.className = 'floating-action-btn';
-        document.body.appendChild(fb);
-        activeDrawing = enableDrawingMode(appMap, null, async (g) => {
-            fb.remove();
-            const r = { id: generateId(), nombre: n, geojson: JSON.stringify(g), fecha: new Date().toISOString() };
-            if (await syncRoute(r, 'rutas')) {
-                showToast('Ruta guardada', 'success');
-                allRoutes.push(r);
-                renderRoutesList(allRoutes);
-            }
-            activeDrawing = null;
-        });
-        fb.onclick = () => activeDrawing.finish();
-    };
-
-    btnImport.onclick = () => {
-        const inp = document.createElement('input');
-        inp.type = 'file';
-        inp.accept = '.gpx';
-        inp.onchange = e => {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.onload = async ev => {
-                try {
-                    const geo = parseGPX(ev.target.result);
-                    const n = prompt("Nombre:", file.name.replace('.gpx',''));
-                    const r = { id: generateId(), nombre: n, geojson: JSON.stringify(geo), fecha: new Date().toISOString() };
-                    if (await syncRoute(r, 'rutas')) {
-                        showToast('GPX Importado', 'success');
-                        allRoutes.push(r);
-                        renderRoutesList(allRoutes);
-                    }
-                } catch (err) { showToast('GPX inválido', 'error'); }
-                modal.classList.remove('active');
-            };
-            reader.readAsText(file);
-        };
-        inp.click();
     };
 }

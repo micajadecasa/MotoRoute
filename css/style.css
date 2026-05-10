@@ -213,62 +213,58 @@ button:active {
 /* Toasts */
 #toast-container {
     position: fixed;
-    top: 1rem;
+    top: 2rem;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 1000;
+    z-index: 10000;
     width: 90%;
-    max-width: 350px;
+    max-width: 380px;
     pointer-events: none;
 }
 
 .toast {
-    background: var(--surface-color);
+    background: #1a1a1acc;
+    backdrop-filter: blur(10px);
     color: white;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
-    border-radius: 16px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 0.8rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     display: flex;
     align-items: center;
     justify-content: space-between;
     pointer-events: auto;
     opacity: 0;
-    transform: translateY(-20px);
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform: translateY(-20px) scale(0.9);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
 .toast.show {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
 }
 
-.toast-success { border-left: 4px solid var(--success-color); }
-.toast-error { border-left: 4px solid var(--error-color); }
-.toast-info { border-left: 4px solid var(--info-color); }
+.toast-success { border-bottom: 4px solid var(--success-color); }
+.toast-error { border-bottom: 4px solid var(--error-color); }
+.toast-info { border-bottom: 4px solid var(--info-color); }
 
-.toast-close {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 1.5rem;
-    padding: 0;
-    margin: 0;
-    width: auto;
-}
-
-/* Floating Action Button for drawing */
+/* Floating Action Button */
 .floating-action-btn {
     position: fixed;
-    bottom: 90px;
+    bottom: 100px;
     left: 50%;
     transform: translateX(-50%);
     width: auto;
-    padding: 0.8rem 2rem;
-    background: var(--success-color);
+    padding: 1.2rem 2.5rem;
+    background: var(--accent-gradient);
     color: white;
-    box-shadow: 0 10px 15px rgba(76, 175, 80, 0.4);
-    z-index: 50;
+    box-shadow: 0 10px 30px rgba(255, 87, 34, 0.4);
+    z-index: 9999;
+    font-size: 1.2rem;
+    font-weight: 800;
+    border-radius: 50px;
+    animation: pulse 2s infinite;
 }
 
 /* Recentrar Button */
