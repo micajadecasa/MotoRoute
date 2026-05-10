@@ -64,10 +64,30 @@
             <div id="sync-status" class="status-indicator" title="Sincronizado"></div>
         </header>
 
-        <main id="map-container" role="main">
+        <main id="map-container" role="main" class="app-view active">
             <div id="map"></div>
             <button id="btn-recenter" class="map-recenter-btn" aria-label="Recentrar">📍</button>
         </main>
+
+        <!-- Vista de Rutas -->
+        <section id="view-routes" class="app-view">
+            <header class="view-header">
+                <h2>Mis Rutas</h2>
+            </header>
+            <div id="routes-list" class="content-list">
+                <p class="empty-msg">Cargando rutas...</p>
+            </div>
+        </section>
+
+        <!-- Vista de POIs -->
+        <section id="view-pois" class="app-view">
+            <header class="view-header">
+                <h2>Puntos de Interés</h2>
+            </header>
+            <div id="pois-list" class="content-list">
+                <p class="empty-msg">No hay POIs guardados.</p>
+            </div>
+        </section>
 
         <div id="toast-container" aria-live="polite"></div>
 

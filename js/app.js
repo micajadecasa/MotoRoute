@@ -6,39 +6,89 @@ let appMap;
 let appDirections;
 let watchId = null;
 let activeDrawing = null;
+let allRoutes = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Inicializar mapa y navegación
     const { map, directions } = initMap();
     appMap = map;
     appDirections = directions;
 
-    // Esperar a que el mapa cargue
-    appMap.on('load', async () => {
-        showToast('Navegación lista', 'success');
+    appMap.on('load', () => {
+        showToast('MotoRoutes lista', 'success');
         setupNavigationTracking();
-        loadExistingRoutes();
+        loadData();
     });
 
-    // Configurar UI
     setupUI();
 });
 
-async function loadExistingRoutes() {
+async function loadData() {
     try {
-        const routes = await fetchRoutes();
-        routes.forEach(route => {
+        allRoutes = await fetchRoutes();
+        renderRoutesList(allRoutes);
+        
+        allRoutes.forEach(route => {
             if (route.geojson) {
                 try {
                     const geo = JSON.parse(route.geojson);
                     addRouteToMap(appMap, geo, `route-${route.id}`);
                 } catch (e) {
-                    console.warn("Error parsing geojson for route", route.id);
+                    console.warn("Error parseando geojson:", route.id);
                 }
             }
         });
     } catch (error) {
-        console.error("Error inicial:", error);
+        showToast('Error cargando datos', 'error');
+    }
+}
+
+function renderRoutesList(routes) {
+    const list = document.getElementById('routes-list');
+    if (!list) return;
+    
+    if (routes.length === 0) {
+        list.innerHTML = '<p class="empty-msg">No hay rutas guardadas.</p>';
+        return;
+    }
+
+    list.innerHTML = routes.map(route => `
+        <div class="route-item" id="item-${route.id}">
+            <div class="route-info">
+                <h3>${route.nombre || 'Sin nombre'}</h3>
+                <p>${new Date(route.fecha).toLocaleDateString()}</p>
+            </div>
+            <button class="btn-view-route primary-btn" data-id="${route.id}">VER</button>
+        </div>
+    `).join('');
+
+    // Eventos para ver ruta
+    list.querySelectorAll('.btn-view-route').forEach(btn => {
+        btn.onclick = () => {
+            const id = btn.getAttribute('data-id');
+            const route = allRoutes.find(r => r.id == id);
+            if (route && route.geojson) {
+                switchView('map-container');
+                const geo = JSON.parse(route.geojson);
+                addRouteToMap(appMap, geo, `route-${id}`);
+            }
+        };
+    });
+}
+
+function switchView(viewId) {
+    document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+    
+    // Actualizar nav
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (viewId === 'map-container' && item.id === 'btn-home') item.classList.add('active');
+        if (viewId === 'view-routes' && item.id === 'btn-routes') item.classList.add('active');
+        if (viewId === 'view-pois' && item.id === 'btn-pois') item.classList.add('active');
+    });
+
+    if (viewId === 'map-container') {
+        appMap.resize();
     }
 }
 
@@ -50,7 +100,6 @@ function setupNavigationTracking() {
     const hudLimit = document.getElementById('hud-limit');
     const hudEta = document.getElementById('hud-eta');
 
-    // Al recibir una ruta, activar HUD
     appDirections.on('route', (e) => {
         const route = e.route[0];
         if (route) {
@@ -74,13 +123,8 @@ function setupNavigationTracking() {
         watchId = navigator.geolocation.watchPosition((pos) => {
             const speedKmH = Math.round((pos.coords.speed || 0) * 3.6);
             hudSpeed.innerText = speedKmH;
-
             const limit = parseInt(hudLimit.innerText) || 90;
-            if (speedKmH > limit) {
-                hudSpeed.style.color = '#ff5252';
-            } else {
-                hudSpeed.style.color = '#fff';
-            }
+            hudSpeed.style.color = speedKmH > limit ? '#ff5252' : '#fff';
 
             if (hud.classList.contains('active')) {
                 appMap.easeTo({
@@ -89,7 +133,7 @@ function setupNavigationTracking() {
                     bearing: pos.coords.heading || 0
                 });
             }
-        }, err => console.error(err), { enableHighAccuracy: true });
+        }, null, { enableHighAccuracy: true });
     }
 }
 
@@ -101,38 +145,43 @@ function setupUI() {
     const btnImport = document.getElementById('btn-import-gpx');
     const btnExitNav = document.getElementById('btn-exit-nav');
 
-    btnExitNav.addEventListener('click', () => {
+    btnExitNav.onclick = () => {
         document.getElementById('moto-hud').classList.remove('active');
         appDirections.removeRoutes();
-    });
+    };
 
-    btnAdd.addEventListener('click', () => {
-        modal.classList.add('active');
-    });
+    btnAdd.onclick = () => modal.classList.add('active');
 
     btnClose.forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.onclick = () => {
             modal.classList.remove('active');
             if (activeDrawing) {
                 activeDrawing.cancel();
                 activeDrawing = null;
             }
-        });
+        };
     });
 
-    // Lógica: Ruta Manual
-    btnManual.addEventListener('click', () => {
+    // Navegación
+    document.getElementById('btn-home').onclick = () => switchView('map-container');
+    document.getElementById('btn-routes').onclick = () => switchView('view-routes');
+    document.getElementById('btn-pois').onclick = () => switchView('view-pois');
+
+    // Ruta Manual
+    btnManual.onclick = () => {
         modal.classList.remove('active');
+        switchView('map-container');
         showToast('Toca el mapa para añadir puntos.', 'info');
         
         const finishBtn = document.createElement('button');
-        finishBtn.id = 'btn-finish-draw';
         finishBtn.innerText = 'Guardar Ruta';
         finishBtn.className = 'floating-action-btn';
         document.body.appendChild(finishBtn);
 
         activeDrawing = enableDrawingMode(appMap, null, async (finalGeoJSON) => {
             finishBtn.remove();
+            showToast('Sincronizando...', 'info');
+            
             const newRoute = {
                 id: generateId(),
                 nombre: "Ruta Manual " + new Date().toLocaleDateString(),
@@ -142,53 +191,55 @@ function setupUI() {
 
             const success = await syncRoute(newRoute);
             if (success) {
-                showToast('¡Ruta guardada!', 'success');
+                showToast('Ruta guardada', 'success');
+                allRoutes.push(newRoute);
+                renderRoutesList(allRoutes);
                 addRouteToMap(appMap, finalGeoJSON, `route-${newRoute.id}`);
+            } else {
+                showToast('Error al guardar. Revisa CORS.', 'error');
             }
             activeDrawing = null;
         });
 
         finishBtn.onclick = () => activeDrawing.finish();
-    });
+    };
 
-    // Lógica: Importar GPX
-    btnImport.addEventListener('click', () => {
+    // Importar GPX
+    btnImport.onclick = () => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.gpx';
-        input.onchange = e => {
+        input.onchange = async e => {
             const file = e.target.files[0];
             const reader = new FileReader();
-            reader.onload = async event => {
+            reader.onload = async ev => {
                 try {
-                    const content = event.target.result;
-                    const geojson = parseGPX(content);
+                    const geojson = parseGPX(ev.target.result);
+                    showToast('Importando...', 'info');
+                    
                     const newRoute = {
                         id: generateId(),
                         nombre: file.name.replace('.gpx', ''),
                         geojson: JSON.stringify(geojson),
                         fecha: new Date().toISOString()
                     };
+
                     const success = await syncRoute(newRoute);
                     if (success) {
-                        showToast('GPX importado', 'success');
+                        showToast('GPX Importado', 'success');
+                        allRoutes.push(newRoute);
+                        renderRoutesList(allRoutes);
                         addRouteToMap(appMap, geojson, `route-${newRoute.id}`);
+                    } else {
+                        showToast('Error al subir GPX', 'error');
                     }
                 } catch (err) {
-                    showToast('Error: ' + err.message, 'error');
+                    showToast('GPX inválido', 'error');
                 }
                 modal.classList.remove('active');
             };
             reader.readAsText(file);
         };
         input.click();
-    });
-
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', function() {
-            if (this.id === 'btn-add') return;
-            document.querySelector('.nav-item.active').classList.remove('active');
-            this.classList.add('active');
-        });
-    });
+    };
 }
