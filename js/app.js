@@ -4,11 +4,18 @@ import { parseGPX, showToast, generateId } from './utils.js';
 
 let appMap;
 let appDirections;
-let watchId = null;
 let activeDrawing = null;
 let allRoutes = [];
 let allPOIs = [];
 let backPressCount = 0;
+let userCoords = null;
+
+// Solicitar posición lo antes posible
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(p => {
+        userCoords = [p.coords.longitude, p.coords.latitude];
+    }, null, { enableHighAccuracy: true });
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     const { map, directions } = initMap();
@@ -20,15 +27,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupNavigationTracking();
         loadData();
         
-        // IR A MI POSICIÓN AL INICIAR
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                appMap.flyTo({
-                    center: [pos.coords.longitude, pos.coords.latitude],
-                    zoom: 14,
-                    duration: 2000
-                });
-            }, null, { enableHighAccuracy: true });
+        // Centrar en el usuario al cargar si tenemos coordenadas
+        if (userCoords) {
+            appMap.flyTo({ center: userCoords, zoom: 14, duration: 2000 });
+        } else if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(p => {
+                userCoords = [p.coords.longitude, p.coords.latitude];
+                appMap.flyTo({ center: userCoords, zoom: 14, duration: 2000 });
+            });
         }
     });
 
@@ -100,8 +106,13 @@ function setupNavigationTracking() {
         btnStartSidebar.style.display = 'none';
         document.getElementById('planner-panel').classList.remove('active');
         
-        // MODO PRIMERA PERSONA ZOOM 15.5
-        appMap.easeTo({ pitch: 60, zoom: 15.5, duration: 1000 });
+        // FORZAR MODO PRIMERA PERSONA
+        appMap.easeTo({
+            pitch: 60,
+            zoom: 15.5,
+            bearing: appMap.getBearing(),
+            duration: 1000
+        });
         updateHUD(route);
     };
 
@@ -112,6 +123,7 @@ function setupNavigationTracking() {
             btnStartSidebar.style.display = 'block';
             btnStart.onclick = () => startNav(route);
             btnStartSidebar.onclick = () => startNav(route);
+            showToast('Ruta lista. Pulsa EMPEZAR.', 'info');
         }
     });
 
@@ -125,9 +137,17 @@ function setupNavigationTracking() {
 
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition((pos) => {
+            userCoords = [pos.coords.longitude, pos.coords.latitude];
             document.getElementById('hud-speed').innerText = Math.round((pos.coords.speed || 0) * 3.6);
+            
             if (hud.classList.contains('active')) {
-                appMap.easeTo({ center: [pos.coords.longitude, pos.coords.latitude], bearing: pos.coords.heading || 0, duration: 1000 });
+                appMap.easeTo({
+                    center: userCoords,
+                    pitch: 60,
+                    zoom: 15.5,
+                    bearing: pos.coords.heading || appMap.getBearing(),
+                    duration: 1000
+                });
             }
         }, null, { enableHighAccuracy: true });
     }
@@ -153,13 +173,21 @@ function setupUI() {
         appMap.easeTo({ pitch: 0, zoom: 12 });
     };
 
-    document.getElementById('btn-recenter').onclick = () => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(p => {
-                appMap.flyTo({ center: [p.coords.longitude, p.coords.latitude], zoom: 15.5 });
-            }, null, { enableHighAccuracy: true });
-        }
-    };
+    // BOTÓN CENTRAR (RE-IMPLEMENTADO MÁS FUERTE)
+    const btnRecenter = document.getElementById('btn-recenter');
+    if (btnRecenter) {
+        btnRecenter.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(p => {
+                    userCoords = [p.coords.longitude, p.coords.latitude];
+                    appMap.flyTo({ center: userCoords, zoom: 15.5, pitch: 0 });
+                    showToast('Centrado en tu posición', 'info');
+                }, err => showToast('Error de GPS', 'error'), { enableHighAccuracy: true });
+            }
+        };
+    }
 
     document.getElementById('btn-compass').onclick = () => { appMap.easeTo({ bearing: 0, pitch: 0 }); };
 

@@ -9,43 +9,25 @@ export function initMap() {
     const map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/dark-v11',
-        center: [-3.70379, 40.41678], // Madrid
+        center: [-3.70379, 40.41678], // Madrid por defecto si falla geo
         zoom: 12,
-        pitch: 45,
+        pitch: 0,
         antialias: true
     });
 
-    // Control de Navegación (Directions)
     const directions = new MapboxDirections({
         accessToken: mapboxgl.accessToken,
         unit: 'metric',
         profile: 'mapbox/driving',
         alternatives: false,
         geometries: 'geojson',
-        language: 'es', // Idioma en castellano
+        language: 'es',
         controls: { instructions: true, profileSwitcher: false },
         placeholderOrigin: 'Mi ubicación',
         placeholderDestination: '¿A dónde vamos?'
     });
 
     map.addControl(directions, 'top-left');
-
-    // Botón de recentrar
-    const btnRecenter = document.getElementById('btn-recenter');
-    if (btnRecenter) {
-        btnRecenter.onclick = () => {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    map.flyTo({
-                        center: [pos.coords.longitude, pos.coords.latitude],
-                        zoom: 15,
-                        pitch: 60
-                    });
-                }, err => console.warn(err), { enableHighAccuracy: true });
-            }
-        };
-    }
-
     return { map, directions };
 }
 
