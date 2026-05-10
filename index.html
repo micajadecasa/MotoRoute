@@ -85,6 +85,14 @@
                 <button class="close-sidebar">✕</button>
             </div>
             <div id="directions-container"></div>
+            
+            <!-- Botón de empezar ruta integrado en el buscador -->
+            <div class="planner-actions">
+                <button id="btn-start-nav-sidebar" class="primary-btn" style="display: none; width: 100%; margin-top: 1rem;">
+                    🏁 EMPEZAR NAVEGACIÓN
+                </button>
+            </div>
+
             <div id="routes-list" class="compact-list"></div>
         </aside>
 
@@ -104,8 +112,11 @@
             </header>
             <div class="settings-content">
                 <div class="setting-item">
-                    <span>Modo Oscuro</span>
-                    <input type="checkbox" checked disabled>
+                    <span>Modo Claro / Oscuro</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-theme" checked>
+                        <span class="slider round"></span>
+                    </label>
                 </div>
                 <div class="setting-item">
                     <span>Unidades</span>

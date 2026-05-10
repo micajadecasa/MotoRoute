@@ -1,15 +1,93 @@
 :root {
-    --bg-color: #000000;
-    --surface-color: #1a1a1a;
     --primary-color: #ff9800;
-    --primary-variant: #f57c00;
-    --text-color: #ffffff;
-    --text-secondary: #b3b3b3;
-    --nav-height: 70px;
     --accent-gradient: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);
-    --error-color: #ff5252;
+    --bg-color: #0a0a0a;
+    --surface-color: #1a1a1a;
+    --text-primary: #ffffff;
+    --text-secondary: #aaaaaa;
+    --nav-height: 85px;
     --success-color: #4caf50;
+    --error-color: #ff5252;
     --info-color: #2196f3;
+}
+
+/* Light Mode Overrides */
+body.light-mode {
+    --bg-color: #f5f5f5;
+    --surface-color: #ffffff;
+    --text-primary: #1a1a1a;
+    --text-secondary: #666666;
+}
+
+body.light-mode .gps-nav-bar {
+    background: #ffffff;
+    border-top: 1px solid #ddd;
+}
+
+body.light-mode .gps-nav-item {
+    color: #888;
+}
+
+body.light-mode .gps-nav-item.active {
+    color: var(--primary-color);
+}
+
+body.light-mode .planner-sidebar,
+body.light-mode .app-view {
+    background: #f5f5f5;
+    color: #1a1a1a;
+}
+
+/* Toggle Switch Styling */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: var(--primary-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
 }
 
 * {
