@@ -288,23 +288,23 @@ button:active {
     padding: 0;
 }
 
-/* Moto HUD Overlay - Transparent Glassmorphism */
+/* Moto HUD Overlay - Darker Glassmorphism for better visibility */
 .hud-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.85); /* Mucho más oscuro */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     z-index: 1000;
     display: none;
     flex-direction: column;
     padding: 2rem 1.5rem;
     color: #fff;
     font-family: 'Inter', sans-serif;
-    pointer-events: none; /* Allow interaction with map underneath if needed */
+    pointer-events: none;
 }
 
 .hud-overlay.active {

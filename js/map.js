@@ -22,6 +22,7 @@ export function initMap() {
         profile: 'mapbox/driving',
         alternatives: false,
         geometries: 'geojson',
+        language: 'es', // Idioma en castellano
         controls: { instructions: true, profileSwitcher: false },
         placeholderOrigin: 'Mi ubicación',
         placeholderDestination: '¿A dónde vamos?'

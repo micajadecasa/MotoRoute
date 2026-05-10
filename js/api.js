@@ -5,12 +5,8 @@ import { CONFIG } from './config.js';
  */
 export async function fetchRoutes() {
     try {
-        const response = await fetch(`${CONFIG.API_BASE}?path=rutas`, {
-            method: 'GET',
-            mode: 'cors',
-            cache: 'no-cache',
-            redirect: 'follow'
-        });
+        // Petición ultra-simple para evitar conflictos de CORS
+        const response = await fetch(`${CONFIG.API_BASE}?path=rutas`);
         
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
@@ -19,8 +15,8 @@ export async function fetchRoutes() {
             const result = JSON.parse(text);
             return result.success ? result.data : [];
         } catch (e) {
-            console.error("Response is not valid JSON:", text);
-            throw new Error("El servidor no devolvió un JSON válido. Revisa el despliegue de Apps Script.");
+            console.error("La respuesta no es JSON válido:", text);
+            throw new Error("El servidor devolvió un error. Revisa el despliegue.");
         }
     } catch (error) {
         console.error("Error fetching routes:", error);
@@ -36,11 +32,8 @@ export async function syncRoute(routeData, path = 'rutas') {
     try {
         const response = await fetch(`${CONFIG.API_BASE}?path=${path}`, {
             method: "POST",
-            mode: "cors",
-            cache: 'no-cache',
-            redirect: 'follow',
             headers: {
-                "Content-Type": "text/plain;charset=utf-8"
+                "Content-Type": "text/plain" // Sin charset para máxima compatibilidad
             },
             body: JSON.stringify(routeData)
         });
@@ -52,7 +45,6 @@ export async function syncRoute(routeData, path = 'rutas') {
             const result = JSON.parse(text);
             return result.success === true;
         } catch (e) {
-            console.error("Response is not valid JSON:", text);
             return false;
         }
     } catch (error) {
