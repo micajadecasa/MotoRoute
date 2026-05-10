@@ -25,13 +25,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadData() {
     try {
+        console.log("Cargando datos desde:", CONFIG.API_BASE);
         const [routes, pois] = await Promise.all([
             fetchRoutes('rutas'),
             fetchRoutes('pois')
         ]);
         
-        allRoutes = routes;
-        allPOIs = pois;
+        allRoutes = routes || [];
+        allPOIs = pois || [];
 
         renderRoutesList(allRoutes);
         renderPOIsList(allPOIs);
@@ -48,13 +49,16 @@ async function loadData() {
 
         // Marcadores de POIs
         allPOIs.forEach(poi => {
-            new mapboxgl.Marker({ color: '#ff9800' })
-                .setLngLat([parseFloat(poi.lng), parseFloat(poi.lat)])
-                .setPopup(new mapboxgl.Popup().setHTML(`<h3>${poi.nombre}</h3>`))
-                .addTo(appMap);
+            if (poi.lng && poi.lat) {
+                new mapboxgl.Marker({ color: '#ff9800' })
+                    .setLngLat([parseFloat(poi.lng), parseFloat(poi.lat)])
+                    .setPopup(new mapboxgl.Popup().setHTML(`<h3>${poi.nombre}</h3><button class="primary-btn" onclick="appDirections.setDestination([${poi.lng}, ${poi.lat}])">IR AHORA</button>`))
+                    .addTo(appMap);
+            }
         });
     } catch (error) {
-        showToast('Error cargando datos del servidor', 'error');
+        console.error("Error en loadData:", error);
+        showToast('Error de conexión con Google Sheets', 'error');
     }
 }
 
