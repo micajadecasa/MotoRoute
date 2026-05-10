@@ -290,70 +290,64 @@ button:active {
     padding: 0;
 }
 
-/* Moto HUD Overlay - Darker Glassmorphism for better visibility */
+/* Moto HUD Overlay - Real HUD with transparent center */
 .hud-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.85); /* Mucho más oscuro */
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: transparent; /* Fondo transparente para ver el mapa */
     z-index: 1000;
     display: none;
     flex-direction: column;
-    padding: 2rem 1.5rem;
     color: #fff;
-    font-family: 'Inter', sans-serif;
-    pointer-events: none;
+    pointer-events: none; /* No bloquea el mapa */
 }
 
 .hud-overlay.active {
     display: flex;
 }
 
-.hud-top, .hud-bottom, .hud-exit-btn {
-    pointer-events: auto; /* Buttons and text containers should be interactive */
-}
-
 .hud-top {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding-top: 4rem;
+    pointer-events: auto;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 80%, transparent 100%);
+    padding: 3rem 1.5rem 2rem;
     text-align: center;
-    text-shadow: 0 4px 10px rgba(0,0,0,0.8);
+    backdrop-filter: blur(5px);
 }
 
 .hud-main-instruction {
-    font-size: 2.8rem;
+    font-size: 2.2rem;
     font-weight: 800;
     line-height: 1.1;
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
     text-transform: uppercase;
-    color: #fff;
 }
 
 .hud-sub-instruction {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     color: var(--primary-color);
-    font-weight: 600;
-    background: rgba(0,0,0,0.5);
-    display: inline-block;
-    padding: 0.5rem 1.5rem;
+    font-weight: 700;
+    background: rgba(0,0,0,0.4);
+    padding: 0.4rem 1.2rem;
     border-radius: 50px;
-    align-self: center;
+    display: inline-block;
+}
+
+.hud-middle {
+    flex: 1; /* Espacio transparente para ver la carretera en 3D */
+    pointer-events: none;
 }
 
 .hud-bottom {
+    pointer-events: auto;
     display: grid;
     grid-template-columns: 1.5fr 1fr 1.2fr;
     gap: 1rem;
-    padding: 2rem 1rem;
-    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
-    border-radius: 30px 30px 0 0;
+    padding: 2rem 1.5rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 80%, transparent 100%);
+    backdrop-filter: blur(5px);
 }
 
 .hud-stat {
@@ -363,34 +357,32 @@ button:active {
 }
 
 .hud-value {
-    font-size: 4.5rem;
+    font-size: 4rem;
     font-weight: 900;
     line-height: 1;
-    color: #fff;
 }
 
 .hud-value-small {
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: 700;
 }
 
 .hud-unit, .hud-label {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: rgba(255,255,255,0.7);
     text-transform: uppercase;
-    letter-spacing: 1px;
 }
 
 .hud-exit-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: auto;
     background: rgba(255, 82, 82, 0.9);
-    color: white;
-    font-size: 1.4rem;
-    font-weight: 900;
-    border-radius: 20px;
-    padding: 1.2rem;
-    margin-top: 1rem;
-    box-shadow: 0 10px 20px rgba(255, 82, 82, 0.3);
-    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    pointer-events: auto;
 }
 
 /* Fix for Mapbox Directions Icons (Missing assets) */
