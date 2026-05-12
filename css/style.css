@@ -864,6 +864,17 @@ body.light-mode .setting-item {
     transform: translateX(0);
 }
 
+.planner-location-quick {
+    padding: 0 1.5rem 1rem;
+}
+
+.small-btn {
+    padding: 0.6rem 1rem !important;
+    font-size: 0.8rem !important;
+    margin: 0 !important;
+    border-radius: 10px !important;
+}
+
 .header-content {
     display: flex;
     justify-content: space-between;

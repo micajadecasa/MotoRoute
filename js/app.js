@@ -97,13 +97,11 @@ function switchView(viewId) {
 function setupNavigationTracking() {
     const hud = document.getElementById('moto-hud');
     const navBar = document.querySelector('.gps-nav-bar');
-    const btnStart = document.getElementById('btn-start-nav');
     const btnStartSidebar = document.getElementById('btn-start-nav-sidebar');
 
     const startNav = (route) => {
         hud.classList.add('active');
         navBar.classList.add('hidden');
-        btnStart.style.display = 'none';
         btnStartSidebar.style.display = 'none';
         document.getElementById('planner-panel').classList.remove('active');
         
@@ -120,9 +118,7 @@ function setupNavigationTracking() {
     appDirections.on('route', (e) => {
         const route = e.route[0];
         if (route) {
-            btnStart.style.display = 'block';
             btnStartSidebar.style.display = 'block';
-            btnStart.onclick = () => startNav(route);
             btnStartSidebar.onclick = () => startNav(route);
             showToast('Ruta lista. Pulsa EMPEZAR.', 'info');
         }
@@ -196,21 +192,38 @@ function setupUI() {
         appMap.easeTo({ pitch: 0, zoom: 12 });
     };
 
-    // BOTÓN CENTRAR (RE-IMPLEMENTADO MÁS FUERTE)
+    // BOTÓN CENTRAR
     const btnRecenter = document.getElementById('btn-recenter');
     if (btnRecenter) {
         btnRecenter.onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (navigator.geolocation) {
+            if (userCoords) {
+                appMap.flyTo({ center: userCoords, zoom: 15.5 });
+                showToast('Centrado en tu posición', 'info');
+            } else if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(p => {
                     userCoords = [p.coords.longitude, p.coords.latitude];
-                    appMap.flyTo({ center: userCoords, zoom: 15.5, pitch: 0 });
-                    showToast('Centrado en tu posición', 'info');
-                }, err => showToast('Error de GPS', 'error'), { enableHighAccuracy: true });
+                    appMap.flyTo({ center: userCoords, zoom: 15.5 });
+                }, null, { enableHighAccuracy: true });
             }
         };
     }
+
+    // Botón Usar Mi Ubicación
+    document.getElementById('btn-use-mylocation').onclick = () => {
+        if (userCoords) {
+            appDirections.setOrigin(userCoords);
+            showToast('Origen establecido en tu ubicación', 'success');
+        } else {
+            showToast('Obteniendo ubicación...', 'info');
+            navigator.geolocation.getCurrentPosition(p => {
+                userCoords = [p.coords.longitude, p.coords.latitude];
+                appDirections.setOrigin(userCoords);
+                showToast('Origen establecido', 'success');
+            });
+        }
+    };
 
     document.getElementById('btn-compass').onclick = () => { appMap.easeTo({ bearing: 0, pitch: 0 }); };
 
