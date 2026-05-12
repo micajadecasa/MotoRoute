@@ -55,16 +55,31 @@ function applyTheme() {
     
     if (isDark) {
         document.body.classList.remove('light-mode');
-        if (appMap) appMap.setStyle('mapbox://styles/mapbox/dark-v11');
+        if (appMap) {
+            appMap.setStyle('mapbox://styles/mapbox/dark-v11');
+            // Actualizar colores de la ruta de Mapbox Directions si es posible
+        }
     } else {
         document.body.classList.add('light-mode');
-        if (appMap) appMap.setStyle('mapbox://styles/mapbox/light-v11');
+        if (appMap) {
+            appMap.setStyle('mapbox://styles/mapbox/light-v11');
+        }
     }
     
-    // Pequeño delay para asegurar que el DOM se actualice antes de re-pintar capas
+    // Actualizar marcadores GeoJSON con los nuevos colores de token
     setTimeout(() => {
         if (appMap && appMap.isStyleLoaded()) {
-            allRoutes.forEach(r => { if (r.geojson) addRouteToMap(appMap, JSON.parse(r.geojson), `route-${r.id}`); });
+            const activeColor = getComputedStyle(document.body).getPropertyValue('--route-active').trim();
+            allRoutes.forEach(r => { 
+                if (r.geojson) {
+                    const id = `route-${r.id}`;
+                    if (appMap.getLayer(id)) {
+                        appMap.setPaintProperty(id, 'line-color', activeColor);
+                    } else {
+                        addRouteToMap(appMap, JSON.parse(r.geojson), id);
+                    }
+                }
+            });
         }
     }, 1000);
 }
