@@ -10,6 +10,7 @@ let allPOIs = [];
 let backPressCount = 0;
 let userCoords = null;
 let vehicleType = localStorage.getItem('vehicleType') || 'moto';
+let currentTheme = localStorage.getItem('theme') || 'dark';
 
 // Solicitar posición lo antes posible
 if (navigator.geolocation) {
@@ -40,8 +41,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     setupUI();
+    applyTheme();
     setupAndroidBackHandler();
 });
+
+function applyTheme() {
+    const toggle = document.getElementById('toggle-theme');
+    if (currentTheme === 'light') {
+        toggle.checked = false;
+        document.body.classList.add('light-mode');
+        if (appMap) appMap.setStyle('mapbox://styles/mapbox/light-v11');
+    } else {
+        toggle.checked = true;
+        document.body.classList.remove('light-mode');
+        if (appMap) appMap.setStyle('mapbox://styles/mapbox/dark-v11');
+    }
+}
 
 function setupAndroidBackHandler() {
     window.history.pushState({ view: 'map' }, '');
@@ -215,15 +230,6 @@ function setupUI() {
         };
     }
 
-    // CLICK EN EL MAPA PARA CAMBIAR RUTA (DESTINO)
-    appMap.on('click', (e) => {
-        const planner = document.getElementById('planner-panel');
-        if (planner.classList.contains('active')) {
-            const coords = [e.lngLat.lng, e.lngLat.lat];
-            appDirections.setDestination(coords);
-            showToast('Nuevo destino marcado', 'success');
-        }
-    });
 
     // Botón Usar Mi Ubicación
     document.getElementById('btn-use-mylocation').onclick = () => {
@@ -243,8 +249,25 @@ function setupUI() {
     document.getElementById('btn-compass').onclick = () => { appMap.easeTo({ bearing: 0, pitch: 0 }); };
 
     document.getElementById('toggle-theme').onchange = (e) => {
-        if (e.target.checked) document.body.classList.remove('light-mode');
-        else document.body.classList.add('light-mode');
+        const isDark = e.target.checked;
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        if (isDark) {
+            document.body.classList.remove('light-mode');
+            appMap.setStyle('mapbox://styles/mapbox/dark-v11');
+        } else {
+            document.body.classList.add('light-mode');
+            appMap.setStyle('mapbox://styles/mapbox/light-v11');
+        }
+    };
+
+    // Botón Añadir Parada
+    document.getElementById('btn-add-stop').onclick = () => {
+        // El plugin de Mapbox Directions no tiene una función pública simple para añadir un input vacío,
+        // pero podemos simular el comportamiento o informar al usuario.
+        // Una forma es añadir un waypoint en el centro del mapa para que aparezca el input.
+        const center = appMap.getCenter();
+        appDirections.addWaypoint(1, [center.lng, center.lat]);
+        showToast('Parada añadida. Puedes cambiar la ubicación en la lista.', 'info');
     };
 
     // Selección de Vehículo
