@@ -1,4 +1,4 @@
-import { initMap, addRouteToMap, enableDrawingMode } from './map.js';
+import { initMap, addRouteToMap, enableDrawingMode, updateUserMarker } from './map.js';
 import { fetchRoutes, syncRoute } from './api.js';
 import { parseGPX, showToast, generateId } from './utils.js';
 
@@ -9,6 +9,7 @@ let allRoutes = [];
 let allPOIs = [];
 let backPressCount = 0;
 let userCoords = null;
+let vehicleType = localStorage.getItem('vehicleType') || 'moto';
 
 // Solicitar posición lo antes posible
 if (navigator.geolocation) {
@@ -129,6 +130,24 @@ function setupNavigationTracking() {
 
     function updateHUD(route) {
         const step = route.legs[0].steps[0];
+        const iconMap = {
+            'turn': '↩',
+            'sharp right': '⤍',
+            'right': '➜',
+            'slight right': '⬈',
+            'straight': '⬆',
+            'slight left': '⬉',
+            'left': '⬅',
+            'sharp left': '⤌',
+            'uturn': '⟲',
+            'arrive': '🏁'
+        };
+        
+        const maneuver = step.maneuver.type;
+        const modifier = step.maneuver.modifier;
+        const iconKey = modifier ? `${maneuver} ${modifier}` : maneuver;
+        
+        document.getElementById('hud-turn-icon').innerText = iconMap[modifier] || iconMap[maneuver] || '⬆';
         document.getElementById('hud-instruction').innerText = step.maneuver.instruction;
         document.getElementById('hud-next-dist').innerText = `${Math.round(step.distance)} m`;
         const eta = new Date(new Date().getTime() + route.duration * 1000);
@@ -139,6 +158,9 @@ function setupNavigationTracking() {
         navigator.geolocation.watchPosition((pos) => {
             userCoords = [pos.coords.longitude, pos.coords.latitude];
             document.getElementById('hud-speed').innerText = Math.round((pos.coords.speed || 0) * 3.6);
+            
+            // Actualizar marcador de posición con rotación
+            updateUserMarker(appMap, userCoords, pos.coords.heading, vehicleType);
             
             if (hud.classList.contains('active')) {
                 appMap.easeTo({
@@ -166,6 +188,7 @@ function setupUI() {
     };
     document.getElementById('btn-settings').onclick = () => { planner.classList.remove('active'); switchView('view-settings'); };
     document.querySelector('.close-sidebar').onclick = () => planner.classList.remove('active');
+    document.querySelector('.back-btn').onclick = () => switchView('map-container');
 
     document.getElementById('btn-exit-nav').onclick = () => {
         hud.classList.remove('active');
@@ -195,6 +218,25 @@ function setupUI() {
         if (e.target.checked) document.body.classList.remove('light-mode');
         else document.body.classList.add('light-mode');
     };
+
+    // Selección de Vehículo
+    const vehicleOptions = document.querySelectorAll('.vehicle-option');
+    // Aplicar estado inicial
+    vehicleOptions.forEach(opt => {
+        if (opt.dataset.vehicle === vehicleType) opt.classList.add('active');
+        else opt.classList.remove('active');
+    });
+
+    vehicleOptions.forEach(opt => {
+        opt.onclick = () => {
+            vehicleType = opt.dataset.vehicle;
+            localStorage.setItem('vehicleType', vehicleType);
+            vehicleOptions.forEach(o => o.classList.remove('active'));
+            opt.classList.add('active');
+            showToast(`Vehículo: ${vehicleType.toUpperCase()}`, 'info');
+            if (userCoords) updateUserMarker(appMap, userCoords, appMap.getBearing(), vehicleType);
+        };
+    });
 
     const moveSearch = () => {
         const dir = document.querySelector('.mapboxgl-ctrl-directions');

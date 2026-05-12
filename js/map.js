@@ -132,3 +132,36 @@ export function enableDrawingMode(map, onPointAdded, onFinished) {
         }
     };
 }
+
+/**
+ * Crea o actualiza el marcador del usuario
+ */
+let userMarker = null;
+export function updateUserMarker(map, coords, bearing, vehicleType = 'moto') {
+    if (!map) return;
+
+    const el = document.createElement('div');
+    el.className = 'user-marker';
+    el.style.backgroundImage = `url('assets/${vehicleType}_marker.png')`;
+
+    if (!userMarker) {
+        userMarker = new mapboxgl.Marker({
+            element: el,
+            rotationAlignment: 'map',
+            pitchAlignment: 'map'
+        })
+        .setLngLat(coords)
+        .addTo(map);
+    } else {
+        userMarker.setLngLat(coords);
+        // Actualizar icono si ha cambiado
+        const currentEl = userMarker.getElement();
+        currentEl.style.backgroundImage = `url('assets/${vehicleType}_marker.png')`;
+    }
+
+    if (bearing !== null) {
+        userMarker.setRotation(bearing);
+    }
+
+    return userMarker;
+}
