@@ -107,10 +107,10 @@ function setupNavigationTracking() {
         
         // FORZAR MODO PRIMERA PERSONA
         appMap.easeTo({
-            pitch: 60,
-            zoom: 15.5,
+            pitch: 65,
+            zoom: 19,
             bearing: appMap.getBearing(),
-            duration: 1000
+            duration: 1500
         });
         updateHUD(route);
     };
@@ -161,8 +161,8 @@ function setupNavigationTracking() {
             if (hud.classList.contains('active')) {
                 appMap.easeTo({
                     center: userCoords,
-                    pitch: 60,
-                    zoom: 15.5,
+                    pitch: 65,
+                    zoom: 19,
                     bearing: pos.coords.heading || appMap.getBearing(),
                     duration: 1000
                 });
