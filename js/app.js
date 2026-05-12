@@ -48,7 +48,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function applyTheme() {
     const toggle = document.getElementById('toggle-theme');
-    // Si no hay preferencia guardada, usamos 'dark' por defecto (toggle.checked = true)
     const theme = localStorage.getItem('theme') || 'dark';
     const isDark = theme === 'dark';
     
@@ -61,14 +60,23 @@ function applyTheme() {
         document.body.classList.add('light-mode');
         if (appMap) appMap.setStyle('mapbox://styles/mapbox/light-v11');
     }
+    
+    // Pequeño delay para asegurar que el DOM se actualice antes de re-pintar capas
+    setTimeout(() => {
+        if (appMap && appMap.isStyleLoaded()) {
+            allRoutes.forEach(r => { if (r.geojson) addRouteToMap(appMap, JSON.parse(r.geojson), `route-${r.id}`); });
+        }
+    }, 1000);
 }
 
 function setupStyleLoadHandler() {
     if (!appMap) return;
     appMap.on('style.load', () => {
-        // El plugin MapboxDirections suele manejarse a sí mismo si no se destruye,
-        // pero por seguridad podemos forzar la actualización si es necesario.
-        console.log("Mapa estilo cargado");
+        // Asegurar que las fuentes de datos y capas personalizadas se mantengan
+        allRoutes.forEach(r => { if (r.geojson) addRouteToMap(appMap, JSON.parse(r.geojson), `route-${r.id}`); });
+        
+        // El plugin Directions a veces necesita ser reiniciado si el estilo cambia drásticamente
+        console.log("Estilo de mapa cargado: ", appMap.getStyle().name);
     });
 }
 
@@ -270,12 +278,11 @@ function setupUI() {
 
     // Botón Añadir Parada
     document.getElementById('btn-add-stop').onclick = () => {
-        // El plugin de Mapbox Directions no tiene una función pública simple para añadir un input vacío,
-        // pero podemos simular el comportamiento o informar al usuario.
-        // Una forma es añadir un waypoint en el centro del mapa para que aparezca el input.
         const center = appMap.getCenter();
-        appDirections.addWaypoint(1, [center.lng, center.lat]);
-        showToast('Parada añadida. Puedes cambiar la ubicación en la lista.', 'info');
+        const waypoints = appDirections.getWaypoints();
+        // Añadir waypoint al final de la lista de waypoints existentes
+        appDirections.addWaypoint(waypoints.length, [center.lng, center.lat]);
+        showToast('Parada añadida. Configura la ubicación en el buscador.', 'info');
     };
 
     // Selección de Vehículo
