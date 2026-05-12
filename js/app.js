@@ -199,16 +199,31 @@ function setupUI() {
             e.preventDefault();
             e.stopPropagation();
             if (userCoords) {
-                appMap.flyTo({ center: userCoords, zoom: 15.5 });
+                appMap.flyTo({ 
+                    center: userCoords, 
+                    zoom: 19, 
+                    pitch: 65,
+                    bearing: appMap.getBearing() 
+                });
                 showToast('Centrado en tu posición', 'info');
             } else if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(p => {
                     userCoords = [p.coords.longitude, p.coords.latitude];
-                    appMap.flyTo({ center: userCoords, zoom: 15.5 });
+                    appMap.flyTo({ center: userCoords, zoom: 19, pitch: 65 });
                 }, null, { enableHighAccuracy: true });
             }
         };
     }
+
+    // CLICK EN EL MAPA PARA CAMBIAR RUTA (DESTINO)
+    appMap.on('click', (e) => {
+        const planner = document.getElementById('planner-panel');
+        if (planner.classList.contains('active')) {
+            const coords = [e.lngLat.lng, e.lngLat.lat];
+            appDirections.setDestination(coords);
+            showToast('Nuevo destino marcado', 'success');
+        }
+    });
 
     // Botón Usar Mi Ubicación
     document.getElementById('btn-use-mylocation').onclick = () => {

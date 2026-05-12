@@ -142,7 +142,7 @@ export function updateUserMarker(map, coords, bearing, vehicleType = 'moto') {
 
     const el = document.createElement('div');
     el.className = 'user-marker';
-    el.style.backgroundImage = `url('assets/${vehicleType}_marker.png')`;
+    el.style.backgroundImage = `url('assets/${vehicleType}_3d.png')`;
 
     if (!userMarker) {
         userMarker = new mapboxgl.Marker({
@@ -156,7 +156,7 @@ export function updateUserMarker(map, coords, bearing, vehicleType = 'moto') {
         userMarker.setLngLat(coords);
         // Actualizar icono si ha cambiado
         const currentEl = userMarker.getElement();
-        currentEl.style.backgroundImage = `url('assets/${vehicleType}_marker.png')`;
+        currentEl.style.backgroundImage = `url('assets/${vehicleType}_3d.png')`;
     }
 
     if (bearing !== null) {

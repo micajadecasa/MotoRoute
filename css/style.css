@@ -561,13 +561,16 @@ button:active {
 }
 
 .speed-box {
-    background: rgba(0, 0, 0, 0.85);
-    border: 2px solid white;
-    padding: 0.8rem 1.2rem;
-    border-radius: 20px;
+    background: rgba(10, 10, 10, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 1rem 1.5rem;
+    border-radius: 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
 
 #hud-speed {
@@ -607,12 +610,13 @@ button:active {
 }
 
 .user-marker {
-    width: 40px;
-    height: 40px;
+    width: 60px;
+    height: 60px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
-    transition: transform 0.1s linear;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 10px 8px rgba(0,0,0,0.4));
 }
 
 /* Settings View Legibility */
