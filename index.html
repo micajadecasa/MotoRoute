@@ -85,17 +85,17 @@
                 <button class="close-sidebar">✕</button>
             </div>
             <div class="planner-location-quick">
-                <button id="btn-use-mylocation" class="secondary-btn small-btn">
-                    📍 USAR MI UBICACIÓN
+                <button id="btn-use-mylocation" class="secondary-btn small-btn" style="flex: 1;">
+                    📍 MI UBICACIÓN
                 </button>
-                <button id="btn-add-stop" class="secondary-btn small-btn" title="Añadir parada">
-                    ➕ PARADA
-                </button>
-                <button id="btn-start-nav-sidebar" class="primary-btn" style="display: none; width: 100%; margin-top: 0.5rem;">
-                    🏁 EMPEZAR NAVEGACIÓN
+                <button id="btn-start-nav-sidebar" class="primary-btn" style="display: none; flex: 1; margin-top: 0;">
+                    🏁 EMPEZAR
                 </button>
             </div>
-            <div id="directions-container"></div>
+            <div id="directions-container">
+                <!-- El botón + se inyectará aquí o se pondrá justo antes -->
+                <button id="btn-add-stop" class="add-stop-inline" title="Añadir parada">➕ AÑADIR PARADA</button>
+            </div>
 
             <div id="routes-list" class="compact-list"></div>
         </aside>

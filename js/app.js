@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     appMap.on('load', () => {
         showToast('MotoRoute Cargado', 'success');
         setupNavigationTracking();
+        setupStyleLoadHandler();
         loadData();
         
         // Centrar en el usuario al cargar si tenemos coordenadas
@@ -47,15 +48,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function applyTheme() {
     const toggle = document.getElementById('toggle-theme');
-    if (currentTheme === 'light') {
-        toggle.checked = false;
-        document.body.classList.add('light-mode');
-        if (appMap) appMap.setStyle('mapbox://styles/mapbox/light-v11');
-    } else {
-        toggle.checked = true;
+    // Si no hay preferencia guardada, usamos 'dark' por defecto (toggle.checked = true)
+    const theme = localStorage.getItem('theme') || 'dark';
+    const isDark = theme === 'dark';
+    
+    toggle.checked = isDark;
+    
+    if (isDark) {
         document.body.classList.remove('light-mode');
         if (appMap) appMap.setStyle('mapbox://styles/mapbox/dark-v11');
+    } else {
+        document.body.classList.add('light-mode');
+        if (appMap) appMap.setStyle('mapbox://styles/mapbox/light-v11');
     }
+}
+
+function setupStyleLoadHandler() {
+    if (!appMap) return;
+    appMap.on('style.load', () => {
+        // El plugin MapboxDirections suele manejarse a sí mismo si no se destruye,
+        // pero por seguridad podemos forzar la actualización si es necesario.
+        console.log("Mapa estilo cargado");
+    });
 }
 
 function setupAndroidBackHandler() {
@@ -251,13 +265,7 @@ function setupUI() {
     document.getElementById('toggle-theme').onchange = (e) => {
         const isDark = e.target.checked;
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        if (isDark) {
-            document.body.classList.remove('light-mode');
-            appMap.setStyle('mapbox://styles/mapbox/dark-v11');
-        } else {
-            document.body.classList.add('light-mode');
-            appMap.setStyle('mapbox://styles/mapbox/light-v11');
-        }
+        applyTheme();
     };
 
     // Botón Añadir Parada
